@@ -1,0 +1,293 @@
+pro c_stitch_arrays_2d_movie_reg,nfrm
+; stitch arrays together from spatial domain decomposition
+
+
+nproc_start = 1
+nproc_end = 24
+nproc = nproc_end-nproc_start + 1
+nframe=nfrm
+ftsz = 14
+tk = 2
+cbt = 0.02
+cbs = 1.3
+buffstat=1
+
+
+;dir = '/Volumes/Scratch/hybrid/Pluto/benchmark/'
+;dir = '/Volumes/Scratch/hybrid/Pluto/run_test_6/'
+dir = '/Volumes/Scratch/hybrid/Pluto/barnes/'
+
+
+read_coords,dir,x,y,z
+
+read_para,dir
+restore,dir+'para.sav'
+
+
+dx = x(1)-x(0)
+dz = z(1)-z(0)
+print,dx,dz
+;Rio = 1800./40.
+Rio = 1184.
+
+nnz = (nz-2)*nproc
+
+x = x-x(nx-nx/2 - 0)
+z = findgen(nnz)*dz 
+z = z-z(nnz/2)+2*dz
+
+nparr = fltarr(nx,nnz)
+nfarr = fltarr(nx,nnz)
+pfarr = fltarr(nx,nnz)
+tparr = fltarr(nx,nnz)
+
+b1arr = fltarr(nx,nnz)
+b1arrx = fltarr(nx,nnz)
+b1arrz = fltarr(nx,nnz)
+
+xsz = round(1400/1.0)
+ysz = round(1200/1.0)
+XINTERANIMATE, SET=[xsz,ysz, nframe], /SHOWLOAD 
+
+video_file = 'pluto.mp4'
+video = idlffvideowrite(video_file)
+framerate = 7.5
+;wdims = w.window.dimensions
+stream = video.addvideostream(xsz, ysz, framerate)
+
+for nfrm = 1,nframe do begin
+
+i = nproc_start
+procnum = strtrim(string(i),2)
+file = 'c.np_'+procnum
+print,file   
+;f_read_2dxz_m_32,file,nfrm,np
+c_read_2dxy_m_32,dir,file,nfrm,np,npxz
+nz2 = nnz-1
+nz1 = nz2 - (nz-2) + 1
+nfarr(*,nz1:nz2) = npxz(*,1:nz-2)
+bndry = nz1
+
+;p=plot(x,nfarr(*,nnz/2))
+
+
+for i = nproc_start+1,nproc_end do begin
+
+   procnum = strtrim(string(i),2)
+   file = 'c.np_'+procnum
+   print,file   
+   c_read_2dxy_m_32,dir,file,nfrm,np,npxz
+   nz2 = nz1-1
+   nz1 = nz2 - (nz-2) +1
+   nfarr(*,nz1:nz2) = npxz(*,1:nz-2) ;+ nparr(*,*,nz1:nz2)
+   bndry = [bndry,nz1]
+   
+endfor
+
+;nfarr = rotate(nfarr,2)
+;regrid
+
+regrid_xz,nfarr,x,z,xr,zr
+
+
+w = window(window_title='2d_xz_slice',dimensions=[xsz,ysz],margin=0,$
+          buffer=buffstat)
+   
+;im1 = image(reverse(nfarr(*,*)/1e15<0.1),xr/Rio,zr/Rio,rgb_table=33,/current,$
+;            layout=[2,2,1],$
+;            font_size=ftsz,axis_style=2,xtickdir=1,ytickdir=1,$
+;            dimensions=[xsz,ysz],buffer=buffstat);,xrange=[-200,50],$
+;;           yrange=[-120,120])
+
+im1 = image(nfarr(*,*)/1e15<0.1,xr/Rio,zr/Rio,rgb_table=33,/current,$
+            layout=[2,2,1],$
+            font_size=ftsz,axis_style=2,xtickdir=1,ytickdir=1,$
+            dimensions=[xsz,ysz],buffer=buffstat,$
+;            xrange=[-350,300],$
+;            yrange=[-300,300],$
+title='$Q_o = 3 \times 10^{27}$ s$^{-1}$; $v_{esc}$ = 10 m/s')
+
+
+cb1 = colorbar(target=im1,orientation=1,textpos=1,font_size=ftsz)
+cb1.translate,-cbt,0,/normal
+;cb1.scale,0.8,cbs
+
+im1.refresh,/disable
+im1.xtitle='x (R$_{P}$)'
+im1.ytitle='z (R$_{P}$)'
+;im1.xtitle='x (Rio)'
+;im1.ytitle='z (Rio)'
+cb1.title='Density (cm$^{-3}$)'
+
+;im1.Save,"test.png",resolution=300
+im1.Save,"test.eps"
+
+;temperature
+
+i = nproc_start
+procnum = strtrim(string(i),2)
+file = 'c.temp_p_'+procnum
+print,file   
+c_read_2dxy_m_32,dir,file,nfrm,tp,tpxz
+nz2 = nnz-1
+nz1 = nz2 - (nz-2) + 1
+tparr(*,nz1:nz2) = tpxz(*,1:nz-2)
+bndry = nz1
+
+for i = nproc_start+1,nproc_end do begin
+
+   procnum = strtrim(string(i),2)
+   file = 'c.temp_p_'+procnum
+   print,file   
+   c_read_2dxy_m_32,dir,file,nfrm,tp,tpxz
+   nz2 = nz1-1
+   nz1 = nz2 - (nz-2) +1
+   print,nz1,nz2
+   tparr(*,nz1:nz2) = tpxz(*,1:nz-2)
+   bndry = [bndry,nz1]
+   
+endfor
+
+
+regrid_xz,tparr,x,z,xr,zr
+
+im2 = image(tparr(*,*)<500,xr/Rio,zr/Rio,rgb_table=33,/current,layout=[2,2,2],$
+            font_size=ftsz,axis_style=2,xtickdir=1,ytickdir=1,$
+            dimensions=[xsz,ysz],buffer=buffstat);,xrange=[-250,50],$
+;           yrange=[-120,120])
+
+cb2 = colorbar(target=im2,orientation=1,textpos=1,font_size=ftsz)
+;cb2.translate,-cbt,0,/normal
+;cb2.scale,0.8,cbs
+cb2.title='Average Energy (eV)'
+
+
+im2.xtitle='x (R$_{P}$)'
+im2.ytitle='z (R$_{P}$)'
+;im2.title='Temperature'
+
+
+i = nproc_start
+procnum = strtrim(string(i),2)
+file = 'c.b1_'+procnum
+print,file   
+c_read_2dxy_vec_m_32,dir,file,nfrm,b1,b1xz
+
+nz2 = nnz-1
+nz1 = nz2 - (nz-2) + 1
+b1arr(*,nz1:nz2) = sqrt(0.0*b1xz(*,1:nz-2,0)^2 + 1.0*b1xz(*,1:nz-2,1)^2 + 0.0*b1xz(*,1:nz-2,2)^2)
+b1arrx(*,nz1:nz2) = b1xz(*,1:nz-2,0)
+b1arrz(*,nz1:nz2) = b1xz(*,1:nz-2,2)
+bndry = nz1
+
+for i = nproc_start+1,nproc_end do begin
+
+   procnum = strtrim(string(i),2)
+   file = 'c.b1_'+procnum
+   print,file   
+   c_read_2dxy_vec_m_32,dir,file,nfrm,b1,b1xz
+   nz2 = nz1-1
+   nz1 = nz2 - (nz-2) +1
+   print,nz1,nz2
+
+   b1arr(*,nz1:nz2) = sqrt(0.0*b1xz(*,1:nz-2,0)^2 + 1.0*b1xz(*,1:nz-2,1)^2 + 0.0*b1xz(*,1:nz-2,2)^2)
+
+   b1arrx(*,nz1:nz2) = b1xz(*,1:nz-2,0)
+   b1arrz(*,nz1:nz2) = b1xz(*,1:nz-2,2)
+   bndry = [bndry,nz1]
+   
+endfor
+
+regrid_xz,b1arr,x,z,xr,zr
+
+;plot,b1arr(10,*)
+;stop
+
+;b1arr = rotate(b1arr,2)
+
+im3 = image(b1arr(*,*)*1.67e-27/1.6e-19/1e-9<2.0,xr/Rio,zr/Rio,rgb_table=33,/current,layout=[2,2,3],$
+            font_size=ftsz,axis_style=2,xtickdir=1,ytickdir=1,$
+            dimensions=[xsz,ysz],buffer=buffstat);,xrange=[-200,50],$
+;           yrange=[-120,120])
+
+cb3 = colorbar(target=im3,orientation=1,textpos=1,font_size=ftsz)
+;cb3.translate,-cbt,0,/normal
+;cb3.scale,0.8,cbs
+cb3.title='B!dy!n (nT)'
+
+im3.xtitle='x (R$_{P}$)'
+im3.ytitle='z (R$_{P}$)'
+;im3.title='By'
+
+
+b1xz = b1xz*1.67e-27/1.6e-19/1e-9
+
+;s1 = streamline(b1arrx,b1arrz,x/Rio,z/Rio,$
+;                x_streamparticles=21,y_streamparticles=21,$
+;                color='white',overplot=1,streamline_stepsize=0.1,$
+;                streamline_nsteps=20,axis_style=2,arrow_size=1.0,auto_range=1,$
+;                xtickdir=1,ytickdir=1,$
+;                                ;xrange=[-xrng,xrng],yrange=[-yrng,yrng],$
+;                font_size=ftsz,thick=tk,arrow_thick=tk,buffer=buffstat)
+
+
+i = nproc_start
+procnum = strtrim(string(i),2)
+file = 'c.up_'+procnum
+print,file   
+c_read_2dxy_vec_m_32,dir,file,nfrm,b1,b1xz
+nz2 = nnz-1
+nz1 = nz2 - (nz-2) + 1
+b1arr(*,nz1:nz2) = sqrt(1.0*b1xz(*,1:nz-2,0)^2 + 0.0*b1xz(*,1:nz-2,1)^2 + 0.0*b1xz(*,1:nz-2,2)^2)
+bndry = nz1
+
+for i = nproc_start+1,nproc_end do begin
+
+   procnum = strtrim(string(i),2)
+   file = 'c.up_'+procnum
+   print,file   
+   c_read_2dxy_vec_m_32,dir,file,nfrm,b1,b1xz
+   nz2 = nz1-1
+   nz1 = nz2 - (nz-2) +1
+   print,nz1,nz2
+   b1arr(*,nz1:nz2) = sqrt(1.0*b1xz(*,1:nz-2,0)^2 + 0.0*b1xz(*,1:nz-2,1)^2 + 0.0*b1xz(*,1:nz-2,2)^2)
+   bndry = [bndry,nz1]
+   
+endfor
+
+regrid_xz,b1arr,x,z,xr,zr
+
+;b1arr = rotate(b1arr,2)
+
+im4 = image(b1arr(*,*)<340,xr/Rio,zr/Rio,rgb_table=33,/current,layout=[2,2,4],$
+            font_size=ftsz,axis_style=2,xtickdir=1,ytickdir=1,$
+            dimensions=[xsz,ysz],buffer=buffstat);,xrange=[-200,50],$
+;           yrange=[-120,120])
+
+cb4 = colorbar(target=im4,orientation=1,textpos=1,font_size=ftsz)
+;cb4.translate,-cbt,0,/normal
+;cb4.scale,0.8,cbs
+cb4.title='u!dx!n (km/s)'
+
+im4.xtitle='x (R$_{P}$)'
+im4.ytitle='z (R$_{P}$)'
+;im4.title='Ux'
+
+
+im4.refresh
+img = im4.CopyWindow()
+
+print, 'Time:', video.put(stream, im4.copywindow())
+
+xinteranimate, frame = nfrm-1, image = img
+
+
+;w.close
+
+endfor
+
+video.cleanup
+xinteranimate,/keep_pixmaps
+
+return
+end
