@@ -1001,8 +1001,8 @@ eff = get_dect_eff()
 
 mp=1.67e-27
 nfile = '1'
-nfrm = 1
-procnum=5
+nfrm = 38
+procnum=12
 ndx = 2.0
 lth = 20.0
 f_lth = lth
@@ -1127,7 +1127,7 @@ slp = (y2-y0)/(x2-x0)
 
 ;for nfrm = nfm-1,nfm do begin
 
-nfrm=1
+nfrm=nfrm/2
 
 nfil = 0
 xfile = dir+'c.xp_'+strtrim(string(procnum),2)
