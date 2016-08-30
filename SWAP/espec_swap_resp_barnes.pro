@@ -1033,7 +1033,8 @@ vidStream = oVid.AddVideoStream(width, height, fps)
 ;restore,'/Volumes/Scratch/Dols_output/trajectory_0_24_27_31.sav'
 ;dir = '/Volumes/MacD97-2/hybrid/SWAP/run_test/'
 ;dir = './tmp2/'
-dir = '/home/nathan/data/2016-06-21/pluto.11:42:40/output-data/oldstyle/'
+dirl = COMMAND_LINE_ARGS()
+dir = dirl[0]
 
 read_para,dir
 
