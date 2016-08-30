@@ -179,6 +179,9 @@ end
 PRO read_part,file,nfrm,Ni_max,xp
 ;----------------------------------------------------------------
 
+; read the nfrm'th frame of the vector particle file 'file' with Ni_max particles.
+; store result in xp
+
 ;Ni_max=long(0)
 ;nt=0l
 ;ntout=0l
@@ -223,6 +226,8 @@ end
 ;----------------------------------------------------------------
 PRO read_part_scalar,file,nfrm,Ni_max,xp
 ;----------------------------------------------------------------
+; read the nfrm'th frame of the scalar particle file 'file' with Ni_max particles.
+; store result in xp
 
 ;Ni_max=long(0)
 ;nt=0
@@ -264,6 +269,10 @@ end
 pro get_dist,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,np,ndx,w,oVid,vidStream,b1
 ;----------------------------------------------------------------
 
+; Get the velocity space distribution within a small volume around xcur, ycur, zcur;
+; then plot something.
+
+; Find velocity space distribution 
 fnsz = 16
 
 dv = 2.0
@@ -322,6 +331,9 @@ if (wh(0) gt -1) then begin
    endfor
 endif
 
+
+
+; Plot something.
 
 w.erase
 
@@ -677,16 +689,24 @@ if (wh(0) gt -1) then begin
          cnt_arr = [cnt_arr,nv*resp/beta_p(wh(l))]
 ;         cnt_arr = [cnt_arr,1.0]
 ;      endif
+      ; energy of each macro particle within volume
+      e_arr = [e_arr,(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)/mrat(wh(l))]
+      ; number of micro particles
+      cnt_arr = [cnt_arr,nv*resp/beta_p(wh(l))]
       
    endfor
 endif
 
 e_arr = 0.5*m1*1.67e-27*e_arr*1e6/1.6e-19 ;convert to eV
 
+; h is the energy histogram in terms of number of macro particle count
+; this will be converted to micro particles in the next for loop.
 h = histogram(e_arr,binsize=dE,min = hmin, max = hmax,reverse_indices=ri)
 h1 = fltarr(n_elements(h))
 for i = 0,n_elements(h)-2 do begin
    if (ri[i] ne ri[i+1]) then begin
+      ; h1(i) is the total number of micro particles contributing to the i'th bin of the
+      ; energy histogram h.
       h1(i) = total(cnt_arr(ri(ri(i):ri(i+1)-1)))
    endif
 endfor
