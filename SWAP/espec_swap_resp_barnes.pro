@@ -536,11 +536,11 @@ endfor
 
 h = h1
 
+; xE is the energy values of each bin of h in order
 xE = dE*(findgen(n_elements(h)) + hmin)
 
-;rebin to log scale
+;rebin to SWAP energy bins (log scale)
 s = {energy_bin, e_mid: 0.0, e_min: 0.0, e_max: 0.0}
-
 close,3
 openr,3,'swap_e_bin.dat'
 
