@@ -519,7 +519,7 @@ common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
 ; _____complex 6
 ; _____string 7 
 fieldtypes=dblarr(3)
-csvfile=file_path+'er_table_lookup_3.csv'
+csvfile=file_path+'er_table_lookup_3_2015c.csv'
 fieldtypes(*)=7
 fieldtypes(0)=5
 fieldtypes(2)=5
