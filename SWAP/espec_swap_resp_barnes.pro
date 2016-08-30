@@ -1200,7 +1200,7 @@ get_e_spec,xcur,ycur,nz/2.,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz,lth,upx,'blue',beta,
 
 help,levst
 
-levst_arr = fltarr(100,n_elements(levst))
+levst_arr = fltarr(150,n_elements(levst))
 levst_arr(0,*) = levst
 
 xpl = (x - x(nx/2+25))/rpl
