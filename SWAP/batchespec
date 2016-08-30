@@ -1,0 +1,3 @@
+.rnew my_colorbar
+.run espec_swap_resp_barnes
+exit
