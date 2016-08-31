@@ -266,59 +266,6 @@ end
 
 
 
-;----------------------------------------------------------------------
-function fit_func,parr
-;----------------------------------------------------------------------
-
-  common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
-
-  parr(5) = parr(1)
-  fit_arr = parr
-
-  wset,0
-  !p.multi=[0,2,1]
-  plot_DGH,parr(0),parr(1),1.0,parr(2),x,y,f_lxyz,f_lth,60
-  yrb = smooth(y,2)
-  plot_maxwellian,parr(4),parr(5),parr(6),x,y,f_lxyz,f_lth,60
-  ymx = smooth(y,2)
-  plot_maxwellian,parr(7),parr(8),parr(9),x,y,f_lxyz,f_lth,60
-  ymx1 = smooth(y,2)
-
-  
-  y2 = abs(parr(3))*yrb*max(f_levst)/(max(yrb))
-  y3 = abs(1-parr(3))*ymx*max(f_levst)/max(ymx)
-  y4 = abs(parr(10))*ymx1*max(f_levst)/max(ymx)
-
-  fit = y2+y3+y4
-   
-
-  chi = 0.0
-  wh = where(f_levst gt 0)
-  plot,f_levst
-  f_lxE = f_lxE(wh)
-  f_levst = f_levst(wh)
-  fit = fit(wh)
-  for i = 0,n_elements(f_levst)-1 do begin
-     chi = chi + (fit(i)-f_levst(i))^2/f_levst(i)
-  endfor
-
-  wset,1
-  !p.multi=[0,1,1]
-  plot,x,fit,/xlog,xrange=[f_lxE_min,max(x)],/ylog,$
-       yrange=[0.01,max(f_levst)],/ysty,/xsty
-  oplot,x,y2,color=fsc_color('red')
-  oplot,x,y3,color=fsc_color('green')
-  oplot,x,y4,color=fsc_color('yellow')
-  oplot,f_lxE,f_levst,linestyle=2,thick=2
-  lxE_fp = [60,80,110,150,200,300,500,700,1000,1500,2000,3000,4000,5000]
-  levst_fp = [2,2.5,3,4,5,5,5,5,4,3,2.5,0.8,0.4,0.04]
-  print,'chi...',chi
-  print,'ring beam, t, v, m, a....',parr(0:3)
-  print,'maxwellian, t, v, m, a...',parr(4:6)
-  return,chi
-
-end
-;----------------------------------------------------------------------
 
 
 ;------------------------------------------------------------
@@ -467,7 +414,7 @@ pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz, $
                lth,upx,clr,beta,eff,lxE,levst,tags,fit=fit
 ;----------------------------------------------------------------------
 
-common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
+common fit_info,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
 
 vr = get_NH_vr()
 
@@ -564,8 +511,6 @@ emax = 1
 lxE = lxE(0:n_elements(lxE)-2)
 levst = levst(0:n_elements(levst)-2)
 
-f_levst = smooth(levst(wh),2)
-f_lxE = lxE(wh)
 
 ;PEPPSI energy scan
 
@@ -641,11 +586,7 @@ if keyword_set(fit) then begin
    ftol = 0.1
    fval = 0.0
  
-   rarr = amoeba(ftol,function_name='fit_func',function_value=fval,nmax=50,$
-                 p0=parr,scale = s)
-
    print,parr
-   print,rarr
    print,fval
 
 endif
@@ -659,7 +600,7 @@ end
 ;main program
 ;----------------------------------------------------------------------
 
-common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
+common fit_info,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
 common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
 
 
@@ -704,8 +645,6 @@ procnum=12
 ndx = 2.0
 lth = 20.0
 f_lth = lth
-f_lxE_min = 100.0
-f_lxE_max = 5000.0
 ani = 1.
 f_ani=ani
 
