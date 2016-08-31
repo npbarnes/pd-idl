@@ -550,7 +550,6 @@ while not(eof(3)) do begin
    readf,3,s
    emin = s.e_min
    emax = s.e_max      
-   dE_caps = s.e_max-s.e_min
    if ((emin ge 1.0) and (emax le 100000)) then begin
       wh = where((xE gt emin) and (xE le emax))
       if (wh(0) ge 0) then levst = [total(h(wh)),levst]
