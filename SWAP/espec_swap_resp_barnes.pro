@@ -411,7 +411,7 @@ end
 
 ;----------------------------------------------------------------------
 pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz, $
-               lth,upx,clr,beta,eff,lxE,levst,tags,fit=fit
+               lth,upx,clr,beta,eff,lxE,levst,tags
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -422,7 +422,7 @@ pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz, $
 ;   lxE: An array containing the centerpoints of each bin of the spectrogram (SWAP binning)
 ;   levst: The energy histogram with bins defined by lxE
 ; Who knows:
-;   ndx,lxyz,lth,upx,clr,beta,eff,fit
+;   ndx,lxyz,lth,upx,clr,beta,eff
 common fit_info,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
 
 vr = get_NH_vr()
@@ -523,85 +523,8 @@ emax = 1
 lxE = lxE(0:n_elements(lxE)-2)
 levst = levst(0:n_elements(levst)-2)
 
-
-;PEPPSI energy scan
-
-lxEfs0 = 24.
-lxEfs = lxEfs0
-levstfs = 0
-dE = 20
-lxEfs = fltarr(256)
-lxEfs(0) = lxEfs0
-for i = 1,255 do begin
-   deltaE = lxEfs(i-1)/lxEfs0
-   lxEfs(i) = lxEfs(i-1) + deltaE
-   emin = lxEfs(i-1) 
-   emax = lxEfs(i)
-   if ((emin ge 24.0) and (emax le 1000e3)) then begin
-      wh = where((xE gt emin) and (xE le emax))
-      if (wh(0) ge 0) then levstfs = [total(h(wh)),levstfs]
-      if (wh(0) eq -1) then levstfs = [0,levstfs]
-   endif
-endfor
-
 print,'max levst...',max(levst)
 
-if keyword_set(fit) then begin
-
-   parr = fltarr(11)
-   s = fltarr(11)
-
-   trb = 50.0
-   parr(0) = trb
-   s(0) = 10.0
-   vrb = upx
-   parr(1) = vrb
-   s(1) = 1.0
-;   mrb = 1
-;   parr(2) = mrb
-;   s(2) = 0
-   ani = 20.0
-   parr(2) = ani
-   s(2) = 2
-   arb = 0.0002
-   parr(3) = arb
-   s(3) = 0.0001
-   
-
-   tmx = 3.0
-   parr(4) = tmx
-   s(4) = 0
-   vmx = upx
-   parr(5) = vmx
-   s(5) = 1.0
-   mmx = 1
-   parr(6) = mmx
-   s(6) = 0
- ;  amx = 1.0-arb
- ;  parr(7) = amx
- ;  s(7) = 0.4
-
-   tmx = 3.0
-   parr(7) = tmx
-   s(7) = 0
-   vmx = upx
-   parr(8) = vmx
-   s(8) = 1.0
-   mmx = 2
-   parr(9) = mmx
-   s(9) = 0
-   amx = 0.05*(1.0-arb)
-   parr(10) = amx
-   s(10) = 0.02
-
-
-   ftol = 0.1
-   fval = 0.0
- 
-   print,parr
-   print,fval
-
-endif
 
 return
 end
