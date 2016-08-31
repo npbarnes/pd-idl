@@ -413,7 +413,16 @@ end
 pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz, $
                lth,upx,clr,beta,eff,lxE,levst,tags,fit=fit
 ;----------------------------------------------------------------------
-
+; ARGUMENTS:
+; Input:
+;   xcur,ycur,zcur: The current location of New Horizons
+;   x,y,z: Defines the grid
+;   xp,vp,mrat,beta_p,tags: Hybrid code output
+; Output:
+;   lxE: An array containing the centerpoints of each bin of the spectrogram (SWAP binning)
+;   levst: The energy histogram with bins defined by lxE
+; Who knows:
+;   ndx,lxyz,lth,upx,clr,beta,eff,fit
 common fit_info,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
 
 vr = get_NH_vr()
@@ -491,6 +500,8 @@ s = {energy_bin, e_mid: 0.0, e_min: 0.0, e_max: 0.0}
 close,3
 openr,3,'swap_e_bin.dat'
 
+; These two values will end up being the last elements of the rebinned
+; histogram, but they will be removed after the loop.
 levst = 0
 lxE = 10
 while not(eof(3)) do begin
@@ -508,6 +519,7 @@ endwhile
 emin = 1
 emax = 1
 
+; Drop the last element since it doesn't come from data
 lxE = lxE(0:n_elements(lxE)-2)
 levst = levst(0:n_elements(levst)-2)
 
