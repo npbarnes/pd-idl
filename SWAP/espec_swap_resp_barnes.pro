@@ -304,7 +304,7 @@ end
 ;------------------------------------------------------------
 function get_dect_eff, eff
 ;------------------------------------------------------------
-common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
+common traj_data,time_traj,it_str,file_path,traj_met
 
 
 ;________________________________________________
@@ -352,7 +352,7 @@ end
 ;------------------------------------------------------------
 function get_NH_vr
 ;------------------------------------------------------------
-common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
+common traj_data,time_traj,it_str,file_path,traj_met
 
 ;_________________________________________________
 ;___Calculate the speed along the sun-spaceraft
@@ -423,7 +423,7 @@ pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz, $
 ;   levst: The energy histogram with bins defined by lxE
 ; Who knows:
 ;   ndx,lxyz,lth,upx,clr,beta,eff
-common fit_info,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
+common s4,wphi
 
 vr = get_NH_vr()
 
@@ -462,7 +462,6 @@ if (wh(0) gt -1) then begin
       vpp(0) = vpp(0)+vr
       vpp2 = sqrt(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)
       vpp1 = vpp/vpp2
-      vdotl = transpose(vpp1(*))#lxyz
       
       get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
 
@@ -516,9 +515,6 @@ while not(eof(3)) do begin
    endif
 endwhile
 
-emin = 1
-emax = 1
-
 ; Drop the last element since it doesn't come from data
 lxE = lxE(0:n_elements(lxE)-2)
 levst = levst(0:n_elements(levst)-2)
@@ -535,8 +531,8 @@ end
 ;main program
 ;----------------------------------------------------------------------
 
-common fit_info,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
-common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
+common s4,wphi
+common traj_data,time_traj,it_str,file_path,traj_met
 
 
 restore,'fin_arr_ebea_ang_eb_bg_corr.sav'
@@ -579,9 +575,7 @@ nfrm = 38
 procnum=12
 ndx = 2.0
 lth = 20.0
-f_lth = lth
 ani = 1.
-f_ani=ani
 
 rio = 1800./40.
 rpl = 1100.
@@ -695,7 +689,6 @@ ycur = jtr(nx-5)
 phi = 0*!dtor  ;phi = 0 is x direction
 theta = 90*!dtor
 lxyz = [sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)]
-f_lxyz = lxyz
 upx = -403.0
 get_e_spec,xcur,ycur,nz/2.,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz,lth,upx,'blue',beta,eff,lxE,levst,tags
 
@@ -723,7 +716,6 @@ for i = itr(nx-5),itr(5),-2 do begin
    phi = 0*!dtor              ;phi = 0 is x direction
    theta = 90*!dtor
    lxyz = [sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)]
-   f_lxyz = lxyz
    !p.multi=[0,1,1]
    upx = -403.0
    get_e_spec,xcur,ycur,nz/2.,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz,lth,upx,'blue',beta,eff,lxE,levst,tags
