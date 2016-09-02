@@ -601,9 +601,10 @@ read_para,dir
 
 restore,filename=dir+'para.sav'
 
-
+; x,y,z define the grid
 read_coords,dir,x,y,z
 
+; xx yy are the positions of grid lines in units of pluto radii centered on pluto
 xx = (x - x(nx/2+25))/rpl
 yy = (y - y(ny/2))/rpl
 
@@ -631,14 +632,18 @@ im = contour(np(*,*,3)<0.5e15,xx,yy,rgb_table=33,$
 cb = colorbar(target=espec1,title='Density (cm!u-3!n)')
 
 
+; Sample points along the NH trajectory
+; Used to compute the path assumed to be a line.
 yy0 = -12.0
 xx0 = 0.0
 
 yy1=0.0
 xx1=-44.0
 
+; slope of NH trajectory
 slp =  (yy1-yy0)/(xx1-xx0)
 
+; NH trajectory coordinates
 xtr = xx
 ytr = slp*xtr - 12.
 
