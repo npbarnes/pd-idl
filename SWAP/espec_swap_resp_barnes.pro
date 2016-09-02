@@ -570,7 +570,6 @@ eff = get_dect_eff()
 !p.multi=[0,1,1]
 
 mp=1.67e-27
-nfile = '1'
 nfrm = 38
 procnum=12
 ndx = 2.0
@@ -656,18 +655,9 @@ endfor
 
 plots,xx(itr),yy(jtr),/data
 
-x0 = 145
-x2 = 4
-y0 =37+20
-y2 = 70+20
-
-
-slp = (y2-y0)/(x2-x0)
-
 
 nfrm=nfrm/2
 
-nfil = 0
 xfile = dir+'c.xp_'+strtrim(string(procnum),2)
 vfile = dir+'c.vp_'+strtrim(string(procnum),2)
 mratfile = dir+'c.mrat_'+strtrim(string(procnum),2)
