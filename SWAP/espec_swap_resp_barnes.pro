@@ -422,7 +422,7 @@ pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz, $
 ;   lxE: An array containing the centerpoints of each bin of the spectrogram (SWAP binning)
 ;   levst: The energy histogram with bins defined by lxE
 ; Who knows:
-;   ndx,lxyz,lth,upx,clr,beta,eff
+;   ndx,lth,upx,clr,beta,eff
 common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
 
 vr = get_NH_vr()
