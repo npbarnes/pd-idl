@@ -304,7 +304,7 @@ end
 ;------------------------------------------------------------
 function get_dect_eff, eff
 ;------------------------------------------------------------
-common traj_data,time_traj,it_str,file_path,traj_met
+common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
 
 
 ;________________________________________________
@@ -352,7 +352,7 @@ end
 ;------------------------------------------------------------
 function get_NH_vr
 ;------------------------------------------------------------
-common traj_data,time_traj,it_str,file_path,traj_met
+common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
 
 ;_________________________________________________
 ;___Calculate the speed along the sun-spaceraft
@@ -423,7 +423,7 @@ pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz, $
 ;   levst: The energy histogram with bins defined by lxE
 ; Who knows:
 ;   ndx,lxyz,lth,upx,clr,beta,eff
-common s4,wphi
+common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
 
 vr = get_NH_vr()
 
@@ -531,8 +531,8 @@ end
 ;main program
 ;----------------------------------------------------------------------
 
-common s4,wphi
-common traj_data,time_traj,it_str,file_path,traj_met
+common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
+common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
 
 
 restore,'fin_arr_ebea_ang_eb_bg_corr.sav'
