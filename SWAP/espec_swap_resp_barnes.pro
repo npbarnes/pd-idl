@@ -440,16 +440,12 @@ nh = fix((hmax-hmin)/dE)+1
 xsz=1000
 ysz=1000
 
-j = ycur
-i = xcur
-k = zcur
+radius = 2000
+dV = (4/3)*!DPI*radius^3
 
-dV = (x(i)+dx - (x(i)-dx))*(y(j)+dx - (y(j)-dx))*(z(k)+dx - (z(k)-dx))
-
-wh = where((xp(*,0) ge x(i)-dx) and (xp(*,0) le x(i)+dx) and $
-           (xp(*,1) ge y(j)-dx) and (xp(*,1) le y(j)+dx) and $ 
-           (xp(*,2) ge z(k)-dx) and (xp(*,2) le z(k)+dx) and $
-           (mrat(*) le 1.0) and (tags(*) ge 1.0))
+wh = where( (sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
+;           (mrat(*) le 1.0) and $
+           (tags(*) ge 1.0))
 
 
 if (wh(0) gt -1) then begin
@@ -610,31 +606,21 @@ c_read_3d_m_32,dir,file,nfrm,np
 
 ; Sample points along the NH trajectory
 ; Used to compute the path assumed to be a line.
-yy0 = -12.0
 xx0 = 0.0
+yy0 = 12.0
 
-yy1=0.0
-xx1=-44.0
+xx1=158
+yy1=-30
 
 ; slope of NH trajectory
 slp =  (yy1-yy0)/(xx1-xx0)
 
-; NH trajectory coordinates
-xtr = xx
-ytr = slp*xtr - 12.
+read_coords,dir,x,y,z
 
-itr = 0
-wh = where(abs(ytr(0)-yy) eq min(abs(ytr(0)-yy)))
-jtr = wh(0)
-for i = 1,n_elements(xtr)-1 do begin
-   wh = where(abs(ytr(i)-yy) eq min(abs(ytr(i)-yy)))
-   itr = [itr,i]
-   jtr = [jtr,wh(0)]
-   print,wh(0)
-
-endfor
-
-plots,xx(itr),yy(jtr),/data
+; Sample points along the NH trajectory
+xtr = (findgen(nx))*x(-1)/nx
+pluto_position = x(n_elements(x)/2 + 30)
+ytr = -slp*(xtr - pluto_position) + yy0*rpl + y(-1)/2
 
 
 nfrm=nfrm/2
@@ -653,8 +639,8 @@ read_part_scalar,beta_p_file,nfrm,Ni_max,beta_p
 read_part_scalar,tags_file,nfrm,Ni_max,tags
 
 
-xcur = itr(nx-5)
-ycur = jtr(nx-5)
+xcur = xtr(nx-1)
+ycur = ytr(nx-1)
 
 
 phi = 0*!dtor  ;phi = 0 is x direction
@@ -668,10 +654,8 @@ help,levst
 levst_arr = fltarr(150,n_elements(levst))
 levst_arr(0,*) = levst
 
-xpl = (x - x(nx/2+25))/rpl
-ypl = (y - y(ny/2))/rpl
-x_arr = xpl(xcur)
-y_arr = ypl(ycur)
+xpl = (xtr - pluto_position)/rpl
+x_arr = xpl(nx-1)
 
 cnt = 0
 
@@ -679,8 +663,8 @@ for i = itr(nx-5),itr(5),-2 do begin
    cnt = cnt+1
    print,i
    
-   xcur=itr(i)
-   ycur=jtr(i)
+   xcur=xtr(i)
+   ycur=ytr(i)
    print,'xcur,ycur...',xcur,ycur
    
    
