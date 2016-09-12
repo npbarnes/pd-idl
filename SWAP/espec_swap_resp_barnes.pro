@@ -410,7 +410,7 @@ end
 
 
 ;----------------------------------------------------------------------
-pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz, $
+pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx, $
                lth,upx,clr,beta,eff,lxE,levst,tags
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
@@ -429,8 +429,6 @@ vr = get_NH_vr()
 
 m1 = 1 ;hybrid simulation mass scaling
  
-dx = x(1)-x(0)
-
 dE = 1.0
 hmin = 1.0
 hmax = 100000.
@@ -645,9 +643,8 @@ ycur = ytr(nx-1)
 
 phi = 0*!dtor  ;phi = 0 is x direction
 theta = 90*!dtor
-lxyz = [sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)]
 upx = -403.0
-get_e_spec,xcur,ycur,nz/2.,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz,lth,upx,'blue',beta,eff,lxE,levst,tags
+get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',beta,eff,lxE,levst,tags
 
 help,levst
 
@@ -670,10 +667,9 @@ for i = itr(nx-5),itr(5),-2 do begin
    
    phi = 0*!dtor              ;phi = 0 is x direction
    theta = 90*!dtor
-   lxyz = [sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)]
    !p.multi=[0,1,1]
    upx = -403.0
-   get_e_spec,xcur,ycur,nz/2.,x,y,z,xp,vp,mrat,beta_p,ndx,lxyz,lth,upx,'blue',beta,eff,lxE,levst,tags
+   get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',beta,eff,lxE,levst,tags
    
    levst_arr(cnt,*) = levst
    x_arr = [x_arr,xpl(i)]
