@@ -656,7 +656,7 @@ x_arr = xpl(nx-1)
 
 cnt = 0
 
-for i = itr(nx-5),itr(5),-2 do begin
+for i = nx-3,0,-2 do begin
    cnt = cnt+1
    print,i
    
