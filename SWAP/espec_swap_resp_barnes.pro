@@ -652,7 +652,7 @@ get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',beta,eff
 
 help,levst
 
-levst_arr = fltarr(150,n_elements(levst))
+levst_arr = fltarr(n_elements(xtr)/2,n_elements(levst))
 levst_arr(0,*) = levst
 
 xpl = (xtr - pluto_position)/rpl
