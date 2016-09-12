@@ -601,35 +601,11 @@ read_para,dir
 
 restore,filename=dir+'para.sav'
 
-; x,y,z define the grid
-read_coords,dir,x,y,z
-
-; xx yy are the positions of grid lines in units of pluto radii centered on pluto
-xx = (x - x(nx/2+25))/rpl
-yy = (y - y(ny/2))/rpl
-
 device,decomposed=0
 loadct,39
 
 file = 'c.np_3d_'+strtrim(string(procnum),2)
 c_read_3d_m_32,dir,file,nfrm,np
-
-contour,np(*,*,3)/1e15<0.5,xx,yy,nlev=100,/fill,/xsty,/ysty,/isotropic
-
-im = contour(np(*,*,3)/1e15<0.5,xx,yy,rgb_table=33,$
-             xtitle='x (Rp)',$
-             xstyle=1,ytitle='y (Rp)',ystyle=1,$
-             xtickdir=1,ytickdir=1,dimensions=[1000,1000],axis_style=2,$
-             font_size=12,/fill,n_levels=10,margin=0.15,name='espec1',aspect_ratio=1,$
-            yrange=[-40,40])
-im = contour(np(*,*,3)<0.5e15,xx,yy,rgb_table=33,$
-             xtitle='x (Rp)',$
-             xstyle=1,ytitle='y (Rp)',ystyle=1,$
-             xtickdir=1,ytickdir=1,dimensions=[1000,1000],axis_style=2,$
-             font_size=12,/fill,n_levels=250,margin=0.15,name='espec',aspect_ratio=1,/overplot,$
-            yrange=[-40,40])
-
-cb = colorbar(target=espec1,title='Density (cm!u-3!n)')
 
 
 ; Sample points along the NH trajectory
