@@ -441,12 +441,13 @@ ysz=1000
 radius = 2000
 dV = (4/3)*!DPI*radius^3
 
-wh = where( (sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
+count = 0
+
+wh = where((sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
 ;           (mrat(*) le 1.0) and $
-           (tags(*) ge 1.0))
+           (tags(*) ge 1.0), count)
 
-
-if (wh(0) gt -1) then begin
+if (count ne 0) then begin
    e_arr = 0
    cnt_arr = 0
    for l = 0ll,n_elements(wh)-1 do begin
@@ -467,7 +468,10 @@ if (wh(0) gt -1) then begin
       cnt_arr = [cnt_arr,nv*resp/beta_p(wh(l))]
       
    endfor
-endif
+endif else begin
+    print, "No macro-particles found in range of NH."
+    stop
+endelse
 
 e_arr = 0.5*m1*1.67e-27*e_arr*1e6/1.6e-19 ;convert to eV
 
