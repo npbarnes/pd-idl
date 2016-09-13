@@ -411,16 +411,16 @@ end
 
 ;----------------------------------------------------------------------
 pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx, $
-               lth,upx,clr,beta,eff,lxE,levst,tags
+               lth,upx,clr,beta,eff,bins,levst,tags
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
 ;   xcur,ycur,zcur: The current location of New Horizons
 ;   x,y,z: Defines the grid
 ;   xp,vp,mrat,beta_p,tags: Hybrid code output
+;   bins: An array containing the left endpoints of each bin of the spectrogram (SWAP binning)
 ; Output:
-;   lxE: An array containing the centerpoints of each bin of the spectrogram (SWAP binning)
-;   levst: The energy histogram with bins defined by lxE
+;   levst: The energy histogram of particle counts
 ; Who knows:
 ;   ndx,lth,upx,clr,beta,eff
 common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
@@ -473,49 +473,17 @@ endif else begin
     stop
 endelse
 
-e_arr = 0.5*m1*1.67e-27*e_arr*1e6/1.6e-19 ;convert to eV
+; Convert energy to eV
+e_arr = 0.5*m1*1.67e-27*e_arr*1e6/1.6e-19
 
-; h is the energy histogram in terms of number of macro particle count
-; this will be converted to micro particles in the next for loop.
-h = histogram(e_arr,binsize=dE,min = hmin, max = hmax,reverse_indices=ri)
-h1 = fltarr(n_elements(h))
-for i = 0,n_elements(h)-2 do begin
-   if (ri[i] ne ri[i+1]) then begin
-      ; h1(i) is the total number of micro particles contributing to the i'th bin of the
-      ; energy histogram h.
-      h1(i) = total(cnt_arr(ri(ri(i):ri(i+1)-1)))
+; build histogram of microparticle counts
+levst = fltarr(n_elements(bins))
+foreach bin, bins, i do begin
+   part_in_bin = where(e_arr ge bin.e_min and e_arr lt bin.e_max, count)
+   if (count ne 0) then begin
+       levst(i) = total(cnt_arr(part_in_bin))
    endif
-endfor
-
-h = h1
-
-; xE is the energy values of each bin of h in order
-xE = dE*(findgen(n_elements(h)) + hmin)
-
-;rebin to SWAP energy bins (log scale)
-s = {energy_bin, e_mid: 0.0, e_min: 0.0, e_max: 0.0}
-close,3
-openr,3,'swap_e_bin.dat'
-
-; These two values will end up being the last elements of the rebinned
-; histogram, but they will be removed after the loop.
-levst = 0
-lxE = 10
-while not(eof(3)) do begin
-   readf,3,s
-   emin = s.e_min
-   emax = s.e_max      
-   if ((emin ge 1.0) and (emax le 100000)) then begin
-      wh = where((xE gt emin) and (xE le emax))
-      if (wh(0) ge 0) then levst = [total(h(wh)),levst]
-      if (wh(0) eq -1) then levst = [0,levst]
-      lxE = [(emax+emin)/2,lxE]
-   endif
-endwhile
-
-; Drop the last element since it doesn't come from data
-lxE = lxE(0:n_elements(lxE)-2)
-levst = levst(0:n_elements(levst)-2)
+endforeach
 
 print,'max levst...',max(levst)
 
@@ -648,7 +616,22 @@ ycur = ytr(nx-1)
 phi = 0*!dtor  ;phi = 0 is x direction
 theta = 90*!dtor
 upx = -403.0
-get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',beta,eff,lxE,levst,tags
+
+; Build a histogram of micro particle counts using the SWAP energy bins (log scale)
+; First read what the SWAP bins are.
+bin = {energy_bin, e_mid: 0.0, e_min: 0.0, e_max: 0.0}
+close,3
+openr,3,'swap_e_bin.dat'
+readf,3,bin
+bins = [bin]
+while not(eof(3)) do begin
+   readf,3,bin
+   bins = [bin,bins]
+endwhile
+; We now have the bin values
+lxE = bins.e_mid
+
+get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',beta,eff,bins,levst,tags
 
 help,levst
 
@@ -673,7 +656,7 @@ for i = nx-3,0,-2 do begin
    theta = 90*!dtor
    !p.multi=[0,1,1]
    upx = -403.0
-   get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',beta,eff,lxE,levst,tags
+   get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',beta,eff,bins,levst,tags
    
    levst_arr(cnt,*) = levst
    x_arr = [x_arr,xpl(i)]
