@@ -443,17 +443,17 @@ dV = (4/3)*!DPI*radius^3
 
 count = 0
 
-wh = where((sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
+particles = where((sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
 ;           (mrat(*) le 1.0) and $
            (tags(*) ge 1.0), count)
 
 if (count ne 0) then begin
    e_arr = 0
    cnt_arr = 0
-   for l = 0ll,n_elements(wh)-1 do begin
+   for l = 0ll,n_elements(particles)-1 do begin
 
       
-      vpp = reform(vp(wh(l),*))
+      vpp = reform(vp(particles(l),*))
       vpp(0) = vpp(0)+vr
       vpp2 = sqrt(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)
       vpp1 = vpp/vpp2
@@ -463,9 +463,9 @@ if (count ne 0) then begin
       nv = vpp2/(dV*beta)
 
       ; energy of each macro particle within volume
-      e_arr = [e_arr,(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)/mrat(wh(l))]
-      ; number of micro particles
-      cnt_arr = [cnt_arr,nv*resp/beta_p(wh(l))]
+      e_arr = [e_arr,(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)/mrat(particles(l))]
+      ; number of micro particles for each macro particle
+      cnt_arr = [cnt_arr,nv*resp/beta_p(particles(l))]
       
    endfor
 endif else begin
