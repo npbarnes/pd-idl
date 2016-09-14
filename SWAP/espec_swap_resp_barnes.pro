@@ -470,7 +470,9 @@ if (count ne 0) then begin
    endfor
 endif else begin
     print, "No macro-particles found in range of NH."
-    stop
+    ; return an empty histogram
+    levst = fltarr(n_elements(bins))
+    return
 endelse
 
 ; Convert energy to eV
