@@ -1,0 +1,19 @@
+pro test_intgl,m,x
+
+f_read_2d_m,'t1_1',m,t
+
+sz = size(t)
+nx = sz(1)
+nz = sz(2)
+
+a = t(x,*)
+plot,a
+
+sum = fltarr(nz)
+for i = 1,nz-1 do begin
+   sum(i) = sum(0:i-1) + a(i)
+endfor
+
+oplot,sum
+
+end

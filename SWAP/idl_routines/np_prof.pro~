@@ -1,0 +1,63 @@
+;-------------------------------------------------------------------
+pro np_prof,nfiles,nfrm,frm,beta
+;-------------------------------------------------------------------
+close,1
+file = 'npall_'
+
+openr,1,file+'1.dat',/f77_unformatted
+
+frame=0
+nt=0
+nout=0
+nx=0
+ny=0
+nz=0
+readu,1,nt
+readu,1,nout
+readu,1,nx
+readu,1,ny
+readu,1,nz
+
+close,1
+
+icld = fltarr(nx,ny,nz,/nozero)
+ncld = fltarr(nx,ny,nz,/nozero) 
+
+mfile = ((frm-1)/(nfrm/nfiles)) + 1
+;print,mfile,frm
+frmcount=1
+frmcount=1+((frm-1) mod (nfrm/nfiles))
+openr,1,file+strtrim(string(mfile),1)+'.dat',/f77_unformatted
+readu,1,nt
+readu,1,nout
+readu,1,nx
+readu,1,ny
+readu,1,nz
+
+cnt=1
+while not(eof(1)) do begin
+   readu,1,frame
+   print,file+strtrim(string(mfile),1)+' image #.....',frame
+   readu,1,icld
+   if (cnt eq frmcount) then goto, BAIL
+   cnt=cnt+1
+endwhile
+
+close,1
+
+BAIL:  
+
+f_read_coord,'coord.dat',x,y,z,dzg,dzc,nx,ny,nz
+
+nprof = dblarr(nx)
+for i = 0,nx-1 do begin
+   nprof(i) = total(icld(i,*,*))/beta
+endfor
+ri=4
+plot,x-(ri*(x(1)-x(0))),nprof,xtitle='x (km)',ytitle = 'Ions per 0.4 km',$
+     charsize = 1.5,title='Ion distribution along satellite path'
+
+
+return
+end
+;-------------------------------------------------------------------

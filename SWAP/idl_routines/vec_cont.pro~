@@ -1,0 +1,5 @@
+f_read_3d_vec_m,'b1all_1',5,b1
+f_read_3d_m,'npall_1',5,np
+
+
+end

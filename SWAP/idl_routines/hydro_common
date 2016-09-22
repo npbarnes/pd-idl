@@ -1,0 +1,7 @@
+common info,nfiles,file,nt,nout,nx,ny,nz
+common view,vcomp,pln,slcxy,slcxz,slcyz,frm,tot_icld,icld,tot_arr,arr,varr,$
+            wxy,wxz,wyz,wfrm,wclr,wnlev,nfrm
+common graph,graph_type,graph_type_prev,anmt_arr,vclr,nlev,ntype
+common ranges,minx,maxx,miny,maxy,minz,maxz
+common sizer,wmnx,wmxx,wmny,wmxy,wmnz,wmxz
+common ps,psfile,prt,lnd,encp,noencp,clr,nclr,numclr,ysz

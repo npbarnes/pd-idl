@@ -1,0 +1,44 @@
+pro apex_prof,nfile,nfrm,sy,sz,bxyz,exyz,POSTSCRIPT=postscript
+q = 1.6e-19
+mba = 26.7e-27
+
+if keyword_set(postscript) then begin
+  set_plot,'ps
+  device,filename='apex_prof.eps
+  device,/encapsulated
+  @x6x9
+  @pspl
+  !p.charsize=2.0
+endif
+
+f_read_coord,'coord.dat',x,y,z,dzc,dzg,nx,ny,nz
+
+rl = 1.67e-27*27.*22.0/(q*3e-5)
+print,rl
+;x = x*rl
+
+file = 'b1all_'+strtrim(nfile,1)
+f_read_3d_vec_m,file,nfrm,b1
+b1 = 1e5*mba*b1/q
+file = 'Eall_'+strtrim(nfile,1)
+f_read_3d_vec_m,file,nfrm,efld
+efld = 1e3*1e3*mba*efld/q
+;efld = smooth(efld,2)
+file = 'npall_'+strtrim(nfile,1)
+f_read_3d_m,file,nfrm,np
+np = np/1e15/1e6
+
+!p.multi=[0,1,3]
+if not(keyword_set(postscript)) then window,0
+!x.range=[0,20]
+plot,x,reverse(np(*,sy,sz)),ytitle='n!dp!n (10!u6!n cm!u-3!n)',title='Density'
+plot,x,reverse(b1(*,sy,sz,bxyz)),ytitle='B (10!u-5!n T)',title='B!dz!n'
+plot,x,reverse(smooth(efld(*,sy,sz,exyz),2)),ytitle='E (mV/m)',xtitle='time',$
+  title='E!dy!n'
+
+if keyword_set(postscript) then begin
+  device,/close
+  set_plot,'x
+endif
+
+end

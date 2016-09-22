@@ -1,0 +1,1 @@
+foreach window, getwindows() do window.close

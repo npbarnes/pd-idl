@@ -1,0 +1,9 @@
+set_plot,'ps
+!p.font=0
+!p.thick=3.0
+!x.thick=3.0
+!y.thick=3.0
+!p.charsize=1.0
+!x.charsize=1.0
+!y.charsize=1.0
+

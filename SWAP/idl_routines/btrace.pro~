@@ -1,0 +1,45 @@
+;-------------------------------------------------------------------
+pro read_file,file,b
+;-------------------------------------------------------------------
+
+close,1
+
+frame=0
+nt=0
+nout=0
+nx=0
+ny=0
+nz=0
+
+openr,1,file,/f77_unformatted
+readu,1,nt
+readu,1,nout
+readu,1,nx
+readu,1,ny
+readu,1,nz
+
+temparr = fltarr(nx,ny,nz,3,/nozero)
+readu,1,frame
+readu,1,temparr
+
+b = temparr
+
+close,1
+
+return
+end
+;-------------------------------------------------------------------
+
+
+;-------------------------------------------------------------------
+pro btrace,file,b
+;btrace.pro  Traces magnetic field lines.
+;-------------------------------------------------------------------
+
+read_file,file,b
+
+contour,reform(b(*,18,*,0))
+
+return
+end
+;-------------------------------------------------------------------
