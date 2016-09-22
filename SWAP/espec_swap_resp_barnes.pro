@@ -565,7 +565,7 @@ vidStream = oVid.AddVideoStream(width, height, fps)
 dirl = COMMAND_LINE_ARGS()
 dir = dirl[0]
 
-read_para,dir
+read_para,dir,p
 
 restore,filename=dir+'para.sav'
 
@@ -590,7 +590,7 @@ slp =  (yy1-yy0)/(xx1-xx0)
 read_coords,dir,x,y,z
 
 ; Sample points along the NH trajectory
-xtr = (findgen(nx))*x(-1)/nx
+xtr = (findgen(p.nx))*x(-1)/p.nx
 pluto_position = x(n_elements(x)/2 + 30)
 ytr = -slp*(xtr - pluto_position) + yy0*rpl + y(-1)/2
 
@@ -604,15 +604,15 @@ beta_p_file = dir+'c.beta_p_'+strtrim(string(procnum),2)
 tags_file = dir+'c.tags_'+strtrim(string(procnum),2)
 
 
-read_part,xfile,nfrm,Ni_max,xp
-read_part,vfile,nfrm,Ni_max,vp
-read_part_scalar,mratfile,nfrm,Ni_max,mrat
-read_part_scalar,beta_p_file,nfrm,Ni_max,beta_p
-read_part_scalar,tags_file,nfrm,Ni_max,tags
+read_part,xfile,nfrm,p.Ni_max,xp
+read_part,vfile,nfrm,p.Ni_max,vp
+read_part_scalar,mratfile,nfrm,p.Ni_max,mrat
+read_part_scalar,beta_p_file,nfrm,p.Ni_max,beta_p
+read_part_scalar,tags_file,nfrm,p.Ni_max,tags
 
 
-xcur = xtr(nx-1)
-ycur = ytr(nx-1)
+xcur = xtr(p.nx-1)
+ycur = ytr(p.nx-1)
 
 
 phi = 0*!dtor  ;phi = 0 is x direction
@@ -633,7 +633,7 @@ endwhile
 ; We now have the bin values
 lxE = bins.e_mid
 
-get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',beta,eff,bins,levst,tags
+get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags
 
 help,levst
 
@@ -641,11 +641,11 @@ levst_arr = fltarr(n_elements(xtr)/2,n_elements(levst))
 levst_arr(0,*) = levst
 
 xpl = (xtr - pluto_position)/rpl
-x_arr = xpl(nx-1)
+x_arr = xpl(p.nx-1)
 
 cnt = 0
 
-for i = nx-3,0,-2 do begin
+for i = p.nx-3,0,-2 do begin
    cnt = cnt+1
    print,i
    
@@ -658,7 +658,7 @@ for i = nx-3,0,-2 do begin
    theta = 90*!dtor
    !p.multi=[0,1,1]
    upx = -403.0
-   get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',beta,eff,bins,levst,tags
+   get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags
    
    levst_arr(cnt,*) = levst
    x_arr = [x_arr,xpl(i)]
