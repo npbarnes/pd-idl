@@ -614,8 +614,6 @@ xcur = xtr(p.nx-1)
 ycur = ytr(p.nx-1)
 
 
-phi = 0*!dtor  ;phi = 0 is x direction
-theta = 90*!dtor
 upx = -403.0
 
 ; Build a histogram of micro particle counts using the SWAP energy bins (log scale)
@@ -653,8 +651,6 @@ for i = p.nx-3,0,-2 do begin
    print,'xcur,ycur...',xcur,ycur
    
    
-   phi = 0*!dtor              ;phi = 0 is x direction
-   theta = 90*!dtor
    !p.multi=[0,1,1]
    upx = -403.0
    get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags
