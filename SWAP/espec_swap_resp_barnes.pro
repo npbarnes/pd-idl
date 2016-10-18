@@ -460,12 +460,12 @@ if (count ne 0) then begin
       
       get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
 
-      nv = vpp2/(dV*beta)
+      nv = vpp2/(dV*beta*beta_p(particles(l)))
 
       ; energy of each macro particle within volume
       e_arr = [e_arr,(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)/mrat(particles(l))]
       ; number of micro particles for each macro particle
-      cnt_arr = [cnt_arr,nv*resp/beta_p(particles(l))]
+      cnt_arr = [cnt_arr,nv*resp]
       
    endfor
 endif else begin
