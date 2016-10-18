@@ -2,8 +2,7 @@
 PRO c_read_3d_m_32,dir,file,nfrm,x
 ;file='coord.dat'
 
-read_para,dir
-restore,dir+'para.sav'
+read_para,dir,p
 
 ;nx=0l
 ;ny=0l
@@ -23,7 +22,7 @@ openr,1,file,/f77_unformatted
 ;readu,1,nz
 ;print,nt,ntout,nx,ny,nz
 
-x=fltarr(nx,ny,nz,/nozero)
+x=fltarr(p.nx,p.ny,p.nz,/nozero)
 
 readu,1,frm
 print,'  image #.....',frm

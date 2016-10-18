@@ -537,8 +537,12 @@ eff = get_dect_eff()
 
 !p.multi=[0,1,1]
 
+dirl = COMMAND_LINE_ARGS()
+dir = dirl[0]
+read_para,dir,p
+
 mp=1.67e-27
-nfrm = 38
+nfrm = p.nt/p.nout
 procnum=12
 ndx = 2.0
 lth = 20.0
@@ -562,12 +566,7 @@ samplerate = 22050L
 oVid = IDLffVideoWrite(file)
 vidStream = oVid.AddVideoStream(width, height, fps)
 
-dirl = COMMAND_LINE_ARGS()
-dir = dirl[0]
 
-read_para,dir,p
-
-restore,filename=dir+'para.sav'
 
 device,decomposed=0
 loadct,39
@@ -595,7 +594,7 @@ pluto_position = x(n_elements(x)/2 + 30)
 ytr = -slp*(xtr - pluto_position) + yy0*rpl + y(-1)/2
 
 
-nfrm=nfrm/2
+nfrm=p.nt/1000
 
 xfile = dir+'c.xp_'+strtrim(string(procnum),2)
 vfile = dir+'c.vp_'+strtrim(string(procnum),2)
