@@ -383,23 +383,59 @@ return,it_vr
 end
 ;------------------------------------------------------------
 
+; These are the right-handed passive rotation matricies
+; (i.e. rotate the coodinates with a fixed vector)
+; Take their transpose (or equivelently let alpha -> -alpha) 
+; for the right-handed active roataion.
+; (i.e. rotate the vector with fixed coodinates)
+function rotXmat, alpha
+  return, [[1,0,0],[0,cos(alpha),sin(alpha)],[0,-sin(alpha),cos(alpha)]]
+end
+
+function rotYmat, alpha
+  return, [[cos(alpha),0,-sin(alpha)],[0,1,0],[sin(alpha),0,cos(alpha)]]
+end
+
+function rotZmat, alpha
+  return, [[cos(alpha),sin(alpha),0],[-sin(alpha),cos(alpha),0],[0,0,1]]
+end
 
 ;----------------------------------------------------------------------
 pro get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
 ;----------------------------------------------------------------------
+; ARGUMENTS:
+; Input:
+;   vpp1: Normalized velocity vector of the macro paricle in space coordinates xyz
+;           i.e. NOT the velocity with respect to the instrument coordinates that
+;           are also called xyz
+;   vpp2: Velocity squared of the macro particle
+;   eff: Detector efficiency
+;   wphi: A structure containing phi values(bins) and the transmission coef at each
+;           of those phi values
+; Output:
+;   resp: The SWAP response to the macroparticle
+; Who knows:
+;   s4
+
+  ; spacecraft orientation (i.e. sunward direction)
+  stheta = 0
+  sphi = 0
+  spin = 90
   
-  ; factor in instrument response
-  lphi = atan(-vpp1(1),-vpp1(0))*!radeg
-  ltheta = atan(sqrt(vpp1(0)^2 + vpp1(1)^2),vpp1(2))*!radeg
+  ; convert direction of particle motion in pluto coords, vpp1, to direction of particle
+  ; motion in SWAP coords
+  ; first rotate +y to +x (this puts it in swap coords for orientation (theta=0,phi=0,spin=0)
+  vpp1_swap = rotZmat(-90*!DtoR)##transpose(vpp1) 
+  ; then apply rotations of the spacecraft in turn
+  vpp1_swap = rotZmat(sphi*!DtoR)##rotXmat(stheta*!DtoR)##rotYmat(spin*!DtoR)##vpp1_swap
 
-  ltheta = ltheta ;- 90.0
 
-  dphi = 0.0 ;bump instrument look direction.
-  lphi = lphi+dphi
+  ; get the look direction
+  vpp1_swap_look = -vpp1_swap
 
-  dtheta = 90.0
-  ltheta = ltheta-dtheta
-
+  ; get angles of the look direction
+  lphi = atan(vpp1_swap_look(0),vpp1_swap_look(1))*!radeg
+  ltheta = -atan(vpp1_swap_look(2),sqrt(vpp1_swap_look(0)^2 + vpp1_swap_look(1)^2))*!radeg
 
   resp = get_swap_resp(vpp2,ltheta,lphi,wphi,s4,eff)
 
