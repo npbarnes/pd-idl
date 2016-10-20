@@ -1,0 +1,17 @@
+./makeespec "$1" 0 0 0 1
+./makeespec "$1" 0 180 0 2
+./makeespec "$1" 0 -90 0 3
+./makeespec "$1" 0 90 0 4
+./makeespec "$1" 0 0 90 5
+./makeespec "$1" 0 180 90 6
+./makeespec "$1" 90 0 90 7
+./makeespec "$1" -90 0 90 8
+
+./makeespec "$1" 0 0 0 1-heavy
+./makeespec "$1" 0 180 0 2-heavy
+./makeespec "$1" 0 -90 0 3-heavy
+./makeespec "$1" 0 90 0 4-heavy
+./makeespec "$1" 0 0 90 5-heavy
+./makeespec "$1" 0 180 90 6-heavy
+./makeespec "$1" 90 0 90 7-heavy
+./makeespec "$1" -90 0 90 8-heavy
