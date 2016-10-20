@@ -426,11 +426,8 @@ pro get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
 ;   resp: The SWAP response to the macroparticle
 ; Who knows:
 ;   s4
-
   ; spacecraft orientation (i.e. sunward direction)
-  stheta = 0
-  sphi = 0
-  spin = 90
+  common orientation, stheta, sphi, spin
   
   ; convert direction of particle motion in pluto coords, vpp1, to direction of particle
   ; motion in SWAP coords
@@ -548,6 +545,7 @@ end
 
 common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
 common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
+common orientation, stheta, sphi, spin
 
 
 restore,'fin_arr_ebea_ang_eb_bg_corr.sav'
@@ -584,8 +582,12 @@ eff = get_dect_eff()
 
 !p.multi=[0,1,1]
 
-dirl = COMMAND_LINE_ARGS()
-dir = dirl[0]
+args = COMMAND_LINE_ARGS()
+dir = args[0]
+stheta = float(args[1])
+sphi = float(args[2])
+spin = float(args[3])
+
 read_para,dir,p
 
 mp=1.67e-27
@@ -735,10 +737,10 @@ evst(wh) = 255b
 img_cont_ylog,evst(*,*),x_arr(*),lxE(*),dunit,xpos1,xpos2,ypos1,ypos2,evst_r,/postscript
 
 cnt_arr = levst_arr(0:cnt,*)
-x = x_arr(0:cnt)
-y = lxE
+xpos = x_arr(0:cnt)
+ebins = lxE
 
-save,filename='espec.sav',cnt_arr,x,y
+save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin), filename='espec-'+args[4]+'.sav',cnt_arr,xpos,ebins
 
 
 end
