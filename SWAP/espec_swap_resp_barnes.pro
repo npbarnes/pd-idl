@@ -454,7 +454,7 @@ end
 
 ;----------------------------------------------------------------------
 pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx, $
-               lth,upx,clr,beta,eff,bins,levst,tags
+               lth,upx,clr,beta,eff,bins,levst,tags, heavy=h
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -463,6 +463,7 @@ pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx, $
 ;   xp,vp,mrat,beta_p,beta,tags: Hybrid code output
 ;   bins: An array containing the left endpoints of each bin of the spectrogram (SWAP binning)
 ;   eff: Detector efficiency
+;   heavy: Set keyword to restrict output to heavy particles
 ; Output:
 ;   levst: The energy histogram of particle counts
 ; Who knows:
@@ -487,9 +488,14 @@ dV = (4.0/3.0)*!DPI*radius^3
 
 count = 0l
 
-particles = where((sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
-;           (mrat(*) le 1.0) and $
-           (tags(*) ge 1.0), count)
+if (keyword_set(h)) then begin
+    particles = where((sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
+               (mrat(*) le 0.1) and $
+               (tags(*) ge 1.0), count)
+endif else begin
+    particles = where((sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
+               (tags(*) ge 1.0), count)
+endelse
 
 if (count ne 0) then begin
    e_arr = 0
@@ -587,6 +593,7 @@ dir = args[0]
 stheta = float(args[1])
 sphi = float(args[2])
 spin = float(args[3])
+isHeavy = (args[4] eq "heavy")
 
 read_para,dir,p
 
@@ -679,7 +686,11 @@ endwhile
 ; We now have the bin values
 lxE = bins.e_mid
 
-get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags
+if (isHeavy) then begin
+    get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags, /heavy
+endif else begin
+    get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags
+endelse
 
 help,levst
 
@@ -702,7 +713,11 @@ for i = p.nx-3,0,-2 do begin
    
    !p.multi=[0,1,1]
    upx = -403.0
-   get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags
+   if (isHeavy) then begin
+       get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags, /heavy
+   endif else begin
+       get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags
+   endelse
    
    levst_arr(cnt,*) = levst
    x_arr = [x_arr,xpl(i)]
@@ -740,7 +755,11 @@ cnt_arr = levst_arr(0:cnt,*)
 xpos = x_arr(0:cnt)
 ebins = lxE
 
-save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin), filename='espec-'+args[4]+'.sav',cnt_arr,xpos,ebins
+if (isHeavy) then begin
+    save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin)+" isHeavy="+string(isHeavy), filename='espec-'+args[5]+'-heavy.sav',cnt_arr,xpos,ebins
+endif else begin
+    save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin)+" isHeavy="+string(isHeavy), filename='espec-'+args[5]+'.sav',cnt_arr,xpos,ebins
+endelse
 
 
 end
