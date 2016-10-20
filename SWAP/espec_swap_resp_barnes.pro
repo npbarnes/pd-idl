@@ -399,15 +399,15 @@ end
 ; for the right-handed active roataion.
 ; (i.e. rotate the vector with fixed coodinates)
 function rotXmat, alpha
-  return, [[1,0,0],[0,cos(alpha),sin(alpha)],[0,-sin(alpha),cos(alpha)]]
+  return, [[1.0,0.0,0.0],[0.0,cos(alpha),sin(alpha)],[0.0,-sin(alpha),cos(alpha)]]
 end
 
 function rotYmat, alpha
-  return, [[cos(alpha),0,-sin(alpha)],[0,1,0],[sin(alpha),0,cos(alpha)]]
+  return, [[cos(alpha),0.0,-sin(alpha)],[0.0,1.0,0.0],[sin(alpha),0.0,cos(alpha)]]
 end
 
 function rotZmat, alpha
-  return, [[cos(alpha),sin(alpha),0],[-sin(alpha),cos(alpha),0],[0,0,1]]
+  return, [[cos(alpha),sin(alpha),0.0],[-sin(alpha),cos(alpha),0.0],[0.0,0.0,1.0]]
 end
 
 ;----------------------------------------------------------------------
@@ -435,7 +435,7 @@ pro get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
   ; convert direction of particle motion in pluto coords, vpp1, to direction of particle
   ; motion in SWAP coords
   ; first rotate +y to +x (this puts it in swap coords for orientation (theta=0,phi=0,spin=0)
-  vpp1_swap = rotZmat(-90*!DtoR)##transpose(vpp1) 
+  vpp1_swap = rotZmat(-90.0*!DtoR)##transpose(vpp1) 
   ; then apply rotations of the spacecraft in turn
   vpp1_swap = rotZmat(sphi*!DtoR)##rotXmat(stheta*!DtoR)##rotYmat(spin*!DtoR)##vpp1_swap
 
@@ -485,10 +485,10 @@ nh = fix((hmax-hmin)/dE)+1
 xsz=1000
 ysz=1000
 
-radius = 2000
-dV = (4/3)*!DPI*radius^3
+radius = 2000.0
+dV = (4.0/3.0)*!DPI*radius^3
 
-count = 0
+count = 0l
 
 particles = where((sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
 ;           (mrat(*) le 1.0) and $
@@ -598,8 +598,8 @@ ani = 1.
 rio = 1800./40.
 rpl = 1100.
 
-xsz=1100
-ysz=1000
+xsz=1100l
+ysz=1000l
 
 file = 'vdist.mp4'
 width = xsz
@@ -627,8 +627,8 @@ c_read_3d_m_32,dir,file,nfrm,np
 xx0 = 0.0
 yy0 = 12.0
 
-xx1=158
-yy1=-30
+xx1=150.
+yy1=-30.
 
 ; slope of NH trajectory
 slp =  (yy1-yy0)/(xx1-xx0)
@@ -641,7 +641,7 @@ pluto_position = x(n_elements(x)/2 + 30)
 ytr = -slp*(xtr - pluto_position) + yy0*rpl + y(-1)/2
 
 
-nfrm=p.nt/1000
+nfrm=p.nt/1000l
 
 xfile = dir+'c.xp_'+strtrim(string(procnum),2)
 vfile = dir+'c.vp_'+strtrim(string(procnum),2)
