@@ -639,7 +639,7 @@ read_coords,dir,x,y,z
 
 ; Sample points along the NH trajectory
 xtr = (findgen(p.nx))*x(-1)/p.nx
-pluto_position = x(n_elements(x)/2 + 30)
+pluto_position = x(n_elements(x)/2 + p.pluto_offset)
 ytr = -slp*(xtr - pluto_position) + yy0*rpl + y(-1)/2
 
 
