@@ -279,20 +279,30 @@ function get_swap_resp,vc,theta,phi,w,s4,eff
   mp=1.67262158D-27
   kb=1.380658D-23
   e=1.6E-19 
+
+  ; Energy of particle in eV
   ee=.5*mp/e*(vc*1000.)^2 ;vc in km/s...ee in eV
 
+  ;Tansmission coef at angle phi
   wp=interpol(w.w, w.phi,phi)
+
+  ;get energy bin of ee
   junk=min(abs(ee-s4.ecen),iee)
 
+  ;get x bin from theta 
   junk=min(abs(theta-(-s4.x)),ix)
 
+  ;Energies represented within the bin
   er1=s4.y(iee,*)*ee
 
+  ;Transmission for this theta within the energy bin
   tt=s4.arr(*,ix,iee)
 
+  ;Tansmission for this theta with that energy
   ttnew=interpol(tt,er1, ee)
   if (ee lt min(er1) and ee gt max(er1)) then ttnew = 0.0d
 
+  ;SWAP response (transmission as a function of phi)*(transmission as a function of E and theta)*(effective area)
   res = wp*ttnew*aeff
 
 return,res
@@ -453,12 +463,13 @@ pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx, $
 ; Input:
 ;   xcur,ycur,zcur: The current location of New Horizons
 ;   x,y,z: Defines the grid
-;   xp,vp,mrat,beta_p,tags: Hybrid code output
+;   xp,vp,mrat,beta_p,beta,tags: Hybrid code output
 ;   bins: An array containing the left endpoints of each bin of the spectrogram (SWAP binning)
+;   eff: Detector efficiency
 ; Output:
 ;   levst: The energy histogram of particle counts
 ; Who knows:
-;   ndx,lth,upx,clr,beta,eff
+;   ndx,lth,upx,clr
 common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
 
 vr = get_NH_vr()
