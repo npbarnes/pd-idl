@@ -453,21 +453,18 @@ end
 
 
 ;----------------------------------------------------------------------
-pro get_e_spec,xcur,ycur,zcur,x,y,z,xp,vp,mrat,beta_p,ndx, $
-               lth,upx,clr,beta,eff,bins,levst,tags, heavy=h
+pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
+               beta,eff,bins,levst,tags, heavy=h
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
 ;   xcur,ycur,zcur: The current location of New Horizons
-;   x,y,z: Defines the grid
 ;   xp,vp,mrat,beta_p,beta,tags: Hybrid code output
 ;   bins: An array containing the left endpoints of each bin of the spectrogram (SWAP binning)
 ;   eff: Detector efficiency
 ;   heavy: Set keyword to restrict output to heavy particles
 ; Output:
 ;   levst: The energy histogram of particle counts
-; Who knows:
-;   ndx,lth,upx,clr
 common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
 
 vr = get_NH_vr()
@@ -674,22 +671,14 @@ upx = -403.0
 
 ; Build a histogram of micro particle counts using the SWAP energy bins (log scale)
 ; First read what the SWAP bins are.
-bin = {energy_bin, e_mid: 0.0, e_min: 0.0, e_max: 0.0}
-close,3
-openr,3,'swap_e_bin.dat'
-readf,3,bin
-bins = [bin]
-while not(eof(3)) do begin
-   readf,3,bin
-   bins = [bin,bins]
-endwhile
+readbins, bins
 ; We now have the bin values
 lxE = bins.e_mid
 
 if (isHeavy) then begin
-    get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags, /heavy
+    make_e_spectrum,xcur,ycur,z(-1)/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags, /heavy
 endif else begin
-    get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags
+    make_e_spectrum,xcur,ycur,z(-1)/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags
 endelse
 
 help,levst
@@ -714,9 +703,9 @@ for i = p.nx-3,0,-2 do begin
    !p.multi=[0,1,1]
    upx = -403.0
    if (isHeavy) then begin
-       get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags, /heavy
+       make_e_spectrum,xcur,ycur,z(-1)/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags, /heavy
    endif else begin
-       get_e_spec,xcur,ycur,z(-1)/2,x,y,z,xp,vp,mrat,beta_p,ndx,lth,upx,'blue',p.beta,eff,bins,levst,tags
+       make_e_spectrum,xcur,ycur,z(-1)/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags
    endelse
    
    levst_arr(cnt,*) = levst
