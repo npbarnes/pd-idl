@@ -541,6 +541,80 @@ return
 end
 ;----------------------------------------------------------------------
 
+pro make_flyby_e_spectrogram, dir, p, x, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
+;----------------------------------------------------------------------
+; ARGUMENTS:
+; Input:
+;   p: parameter structure.
+;   x: Structure in the form {x0:*, x1:*, y0:*, y1:*}. Two points that NH passes through on its trajectory.
+;       In units of Rp with pluto at the origin. x-y pluto coordinates.
+; Output:
+;   levst_arr: Synthetic energy spectrogram
+
+; radius of pluto
+rpl = 1187.
+
+isHeavy = 0
+
+; slope of NH trajectory
+slp =  (x.y1-x.y0)/(x.x1-x.x0)
+
+; Read coordinate file to get the size of the domain.
+read_coords,dir,qx,qy,qz
+
+maxx = qx(-1)
+maxy = qy(-1)
+maxz = qz(-1)
+
+; Sample points along the NH trajectory
+xtr = (findgen(p.nx))*maxx/p.nx
+pluto_position = qx(n_elements(qx)/2 + p.pluto_offset)
+ytr = -slp*(xtr - pluto_position) + x.y0*rpl + maxy/2
+
+; Build a histogram of micro particle counts using the SWAP energy bins (log scale)
+; First read what the SWAP bins are.
+readbins, bins
+; We now have the bin values
+lxE = bins.e_mid
+
+xpl = (xtr - pluto_position)/rpl
+x_arr = xpl(p.nx-1)
+
+xcur = xtr(p.nx-1)
+ycur = ytr(p.nx-1)
+if (isHeavy) then begin
+    make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags, /heavy
+endif else begin
+    make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags
+endelse
+levst_arr = fltarr(n_elements(xtr)/2,n_elements(levst))
+levst_arr(0,*) = levst
+
+
+cnt = 0
+
+for i = p.nx-3,0,-2 do begin
+   cnt = cnt+1
+   
+   xcur=xtr(i)
+   ycur=ytr(i)
+   
+   !p.multi=[0,1,1]
+   if (isHeavy) then begin
+       make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags, /heavy
+   endif else begin
+       make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags
+   endelse
+   
+   levst_arr(cnt,*) = levst
+   x_arr = [x_arr,xpl(i)]
+   
+   contour,alog(levst_arr(0:cnt,*)>1),x_arr(0:cnt),lxE,/ylog,$
+           xtitle='x (Rp)',yrange=[24,100000],$
+           xstyle=1,ytitle='Energy/q [eV/q]',/fill,nlev=50
+
+endfor
+end
 
 ;----------------------------------------------------------------------
 ;main program
@@ -602,7 +676,6 @@ lth = 20.0
 ani = 1.
 
 rio = 1800./40.
-rpl = 1100.
 
 xsz=1100l
 ysz=1000l
@@ -628,23 +701,6 @@ file = 'c.np_3d_'+strtrim(string(procnum),2)
 c_read_3d_m_32,dir,file,nfrm,np
 
 
-; Sample points along the NH trajectory
-; Used to compute the path assumed to be a line.
-xx0 = 0.0
-yy0 = 12.0
-
-xx1=150.
-yy1=-30.
-
-; slope of NH trajectory
-slp =  (yy1-yy0)/(xx1-xx0)
-
-read_coords,dir,x,y,z
-
-; Sample points along the NH trajectory
-xtr = (findgen(p.nx))*x(-1)/p.nx
-pluto_position = x(n_elements(x)/2 + p.pluto_offset)
-ytr = -slp*(xtr - pluto_position) + yy0*rpl + y(-1)/2
 
 
 nfrm=p.nt/1000l
@@ -662,60 +718,7 @@ read_part_scalar,mratfile,nfrm,p.Ni_max,mrat
 read_part_scalar,beta_p_file,nfrm,p.Ni_max,beta_p
 read_part_scalar,tags_file,nfrm,p.Ni_max,tags
 
-
-xcur = xtr(p.nx-1)
-ycur = ytr(p.nx-1)
-
-
-upx = -403.0
-
-; Build a histogram of micro particle counts using the SWAP energy bins (log scale)
-; First read what the SWAP bins are.
-readbins, bins
-; We now have the bin values
-lxE = bins.e_mid
-
-if (isHeavy) then begin
-    make_e_spectrum,xcur,ycur,z(-1)/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags, /heavy
-endif else begin
-    make_e_spectrum,xcur,ycur,z(-1)/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags
-endelse
-
-help,levst
-
-levst_arr = fltarr(n_elements(xtr)/2,n_elements(levst))
-levst_arr(0,*) = levst
-
-xpl = (xtr - pluto_position)/rpl
-x_arr = xpl(p.nx-1)
-
-cnt = 0
-
-for i = p.nx-3,0,-2 do begin
-   cnt = cnt+1
-   print,i
-   
-   xcur=xtr(i)
-   ycur=ytr(i)
-   print,'xcur,ycur...',xcur,ycur
-   
-   
-   !p.multi=[0,1,1]
-   upx = -403.0
-   if (isHeavy) then begin
-       make_e_spectrum,xcur,ycur,z(-1)/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags, /heavy
-   endif else begin
-       make_e_spectrum,xcur,ycur,z(-1)/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags
-   endelse
-   
-   levst_arr(cnt,*) = levst
-   x_arr = [x_arr,xpl(i)]
-   
-   contour,alog(levst_arr(0:cnt,*)>1),x_arr(0:cnt),lxE,/ylog,$
-           xtitle='x (Rp)',yrange=[24,100000],$
-           xstyle=1,ytitle='Energy/q [eV/q]',/fill,nlev=50
-
-endfor
+make_flyby_e_spectrogram, dir, p, {x0:0.,x1:110.,y0:12.,y1:-30.}, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
 
 im = contour(alog(levst_arr(0:cnt,*)>1),x_arr(0:cnt),lxE,/ylog,$
              xtitle='x (Rp)',yrange=[24,100000],$;xrange=[max(x_arr),min(x_arr)],$
