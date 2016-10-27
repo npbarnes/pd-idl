@@ -35,142 +35,142 @@ pro img_cont_ylog, a, x, y,dunit,xpos1,xpos2,ypos1,ypos2,evst_r,WINDOW_SCALE = w
 ;	DMS, May, 1988.
 ;-
 
-nclr = !d.n_colors
+    nclr = !d.n_colors
 
-if keyword_set(postscript) then begin
-set_plot,'ps
-device,filename='img.eps
-device,/encapsulated
-!p.font=0
-;device,/hevletica
-device,bits=8
-device,/color
-;loadct,33
-device,/inches,xsize=6.5,ysize=6.5,xoffset =1.0, yoffset=1.0
-!p.thick=2.0
-!x.thick=2.0
-!y.thick=2.0
-endif
+    if keyword_set(postscript) then begin
+    set_plot,'ps
+    device,filename='img.eps
+    device,/encapsulated
+    !p.font=0
+    ;device,/hevletica
+    device,bits=8
+    device,/color
+    ;loadct,33
+    device,/inches,xsize=6.5,ysize=6.5,xoffset =1.0, yoffset=1.0
+    !p.thick=2.0
+    !x.thick=2.0
+    !y.thick=2.0
+    endif
 
-maxa=max(a)
-mina=min(a)
+    maxa=max(a)
+    mina=min(a)
 
-sz=size(a)
+    sz=size(a)
 
-!p.charsize=1.2
-!y.margin = [10,10]
-!x.margin = [10,10]
+    !p.charsize=1.2
+    !y.margin = [10,10]
+    !x.margin = [10,10]
 
-on_error,2                      ;Return to caller if an error occurs
-sz = size(a)			;Size of image
-if sz(0) lt 2 then message, 'Parameter not 2D'
+    on_error,2                      ;Return to caller if an error occurs
+    sz = size(a)			;Size of image
+    if sz(0) lt 2 then message, 'Parameter not 2D'
 
-	;set window used by contour
+        ;set window used by contour
 
-contour,[[0,0],[1,1]],/nodata, xstyle=1, ystyle = 1,$
-            ytitle='Energy/q (eV/q)',$
-            xtitle='x (Rp)',$
-            xrange=[max(x),min(x)],yrange=[24,max(y)],/ylog,$
-        position=[xpos1,ypos1,xpos2,ypos2]
-;        xticks=1,$
-;        xtickname = [' ',' '],$
-;        xtickv=[min(x),max(x)],xminor=1
-;            xrange=[min(x),max(x)],yrange=[10,5000],/ylog
-;            title='t = '+strmid(strtrim(string(0.5*nfrm*100.),2),0,6) + ' (s)',$
-;            /isotropic
-;            xrange=[min(x),800],yrange=[min(y),max(y)+1]
-p1 = !P & x1 = !X & y1= !Y
+    contour,[[0,0],[1,1]],/nodata, xstyle=1, ystyle = 1,$
+                ytitle='Energy/q (eV/q)',$
+                xtitle='x (Rp)',$
+                xrange=[max(x),min(x)],yrange=[24,max(y)],/ylog,$
+            position=[xpos1,ypos1,xpos2,ypos2]
+    ;        xticks=1,$
+    ;        xtickname = [' ',' '],$
+    ;        xtickv=[min(x),max(x)],xminor=1
+    ;            xrange=[min(x),max(x)],yrange=[10,5000],/ylog
+    ;            title='t = '+strmid(strtrim(string(0.5*nfrm*100.),2),0,6) + ' (s)',$
+    ;            /isotropic
+    ;            xrange=[min(x),800],yrange=[min(y),max(y)+1]
+    p1 = !P & x1 = !X & y1= !Y
 
-px = !x.window * !d.x_vsize	;Get size of window in device units
-py = !y.window * !d.y_vsize
-swx = px(1)-px(0)		;Size in x in device units
-swy = py(1)-py(0)		;Size in Y
-six = float(sz(1))		;Image sizes
-siy = float(sz(2))
-aspi = six / siy		;Image aspect ratio
-aspw = swx / swy		;Window aspect ratio
-f = aspi / aspw			;Ratio of aspect ratios
+    px = !x.window * !d.x_vsize	;Get size of window in device units
+    py = !y.window * !d.y_vsize
+    swx = px(1)-px(0)		;Size in x in device units
+    swy = py(1)-py(0)		;Size in Y
+    six = float(sz(1))		;Image sizes
+    siy = float(sz(2))
+    aspi = six / siy		;Image aspect ratio
+    aspw = swx / swy		;Window aspect ratio
+    f = aspi / aspw			;Ratio of aspect ratios
 
-if (!d.flags and 1) ne 0 then begin	;Scalable pixels?
-  if keyword_set(aspect) then begin	;Retain aspect ratio?
-				;Adjust window size
-	if f ge 1.0 then swy = swy / f else swx = swx * f
-	endif
-  ;print,max(a)
-  tv,a,px(0),py(0),xsize = swx, ysize = swy, /device
-
-
-endif else begin	;Not scalable pixels	
-   if keyword_set(window_scale) then begin ;Scale window to image?
-	tv,a,px(0),py(0)	;Output image
-	swx = six		;Set window size from image
-	swy = siy
-    endif else begin		;Scale window
-	if keyword_set(aspect) then begin
-		if f ge 1.0 then swy = swy / f else swx = swx * f
-		endif		;aspect
-        ;print,max(a)
-	tv,poly_2d((a),$	;Have to resample image
-                   [[0,0],[six/swx,0]], [[0,siy/swy],[0,0]],$
-                   keyword_set(interp),swx,swy), $
-           px(0),py(0)
-
-	endelse			;window_scale
-  endelse			;scalable pixels
-
-     axis,xaxis=2,xstyle=1
-     axis,yaxis=2,ystyle=1
-;     axis,yaxis=1,ystyle=1
-;     axis,xaxis=1,xstyle=1
-;;     yticks=2,$
-;;     ytickv=[min(y),(min(y)+max(y))/2,max(y)], $
-;;     ytickname=[string(min(a)),string((min(a)+max(a))/2),string(max(a))], $
-;;     ytitle='E!dz!n (mV/m)',$
-;;     yrange = [mina*(2.3e-25/1.6e-19)*1e6,maxa*(2.3e-25/1.6e-19*1e6)]
-;     ytitle='(u!de!n)!dz!n (km/s)',$
-;     yrange = [mina,maxa]
+    if (!d.flags and 1) ne 0 then begin	;Scalable pixels?
+      if keyword_set(aspect) then begin	;Retain aspect ratio?
+                    ;Adjust window size
+        if f ge 1.0 then swy = swy / f else swx = swx * f
+        endif
+      ;print,max(a)
+      tv,a,px(0),py(0),xsize = swx, ysize = swy, /device
 
 
-mx = !d.n_colors-1		;Brightest color
-colors = [mx,mx,mx,0,0,0]	;color vectors
-if !d.name eq 'PS' then colors = mx - colors ;invert line colors for pstscrp
-m = max(a)
-;contour,[[0,0],[1,1]],/nodata, xstyle=1, ystyle = 1
-;contour,a,/noerase,/nodata,/yst,$	;Do the contour
-;	  pos = [px(0),py(0), px(0)+swx,py(0)+swy],/dev,$
-;          c_color =  colors, charsize=1.5, $
-;          xtitle='x (km)', ytitle='y (km)', $
-;          levels=[0.02*m,0.04*m,0.06*m,0.2*m,0.4*m,0.5*m,0.7*m,0.9*m]
-;;	  xrange=[min(ax),max(ax)], xstyle=1
-;dx = !x.crange(1) - !x.crange(0)
-;dy = !y.crange(1) - !y.crange(0)
-;xyouts,0.05*dx+!x.crange(0),0.85*dy+!y.crange(0),tit,/data
-;!p.multi=[0,1,2]
+    endif else begin	;Not scalable pixels	
+       if keyword_set(window_scale) then begin ;Scale window to image?
+        tv,a,px(0),py(0)	;Output image
+        swx = six		;Set window size from image
+        swy = siy
+        endif else begin		;Scale window
+        if keyword_set(aspect) then begin
+            if f ge 1.0 then swy = swy / f else swx = swx * f
+            endif		;aspect
+            ;print,max(a)
+        tv,poly_2d((a),$	;Have to resample image
+                       [[0,0],[six/swx,0]], [[0,siy/swy],[0,0]],$
+                       keyword_set(interp),swx,swy), $
+               px(0),py(0)
 
-!P = p1 & !X = x1 & !Y = y1
+        endelse			;window_scale
+      endelse			;scalable pixels
 
-;contour,[[0,0],[1,1]],/nodata, xstyle=1, ystyle = 1,/noerase
+         axis,xaxis=2,xstyle=1
+         axis,yaxis=2,ystyle=1
+    ;     axis,yaxis=1,ystyle=1
+    ;     axis,xaxis=1,xstyle=1
+    ;;     yticks=2,$
+    ;;     ytickv=[min(y),(min(y)+max(y))/2,max(y)], $
+    ;;     ytickname=[string(min(a)),string((min(a)+max(a))/2),string(max(a))], $
+    ;;     ytitle='E!dz!n (mV/m)',$
+    ;;     yrange = [mina*(2.3e-25/1.6e-19)*1e6,maxa*(2.3e-25/1.6e-19*1e6)]
+    ;     ytitle='(u!de!n)!dz!n (km/s)',$
+    ;     yrange = [mina,maxa]
 
-contour,[[0,0],[1,1]],/nodata, xstyle=1, ystyle = 1,$
-            ytitle='Energy/q (eV/q)',$
-            xtitle='x (Rp)',$
-            xrange=[max(x),min(x)],yrange=[24,max(y)],/ylog,$
-        position=[xpos1,ypos1,xpos2,ypos2],/noerase
 
-cgColorbar, position=[!y.window(0),!x.window(1)+0.05,!y.window(1),$
-                      !x.window(1)+0.08],$
-           ncolors=255,$
-           maxrange=[exp(max(evst_r))],minrange=[1],$
-           title='Counts/s',$
-           charsize=1.4,/xlog,xtickformat='log_label'
+    mx = !d.n_colors-1		;Brightest color
+    colors = [mx,mx,mx,0,0,0]	;color vectors
+    if !d.name eq 'PS' then colors = mx - colors ;invert line colors for pstscrp
+    m = max(a)
+    ;contour,[[0,0],[1,1]],/nodata, xstyle=1, ystyle = 1
+    ;contour,a,/noerase,/nodata,/yst,$	;Do the contour
+    ;	  pos = [px(0),py(0), px(0)+swx,py(0)+swy],/dev,$
+    ;          c_color =  colors, charsize=1.5, $
+    ;          xtitle='x (km)', ytitle='y (km)', $
+    ;          levels=[0.02*m,0.04*m,0.06*m,0.2*m,0.4*m,0.5*m,0.7*m,0.9*m]
+    ;;	  xrange=[min(ax),max(ax)], xstyle=1
+    ;dx = !x.crange(1) - !x.crange(0)
+    ;dy = !y.crange(1) - !y.crange(0)
+    ;xyouts,0.05*dx+!x.crange(0),0.85*dy+!y.crange(0),tit,/data
+    ;!p.multi=[0,1,2]
 
-if keyword_set(postscript) then begin
-device,/close
-set_plot,'x'
-!p.font=-1
-endif
+    !P = p1 & !X = x1 & !Y = y1
 
-return
+    ;contour,[[0,0],[1,1]],/nodata, xstyle=1, ystyle = 1,/noerase
+
+    contour,[[0,0],[1,1]],/nodata, xstyle=1, ystyle = 1,$
+                ytitle='Energy/q (eV/q)',$
+                xtitle='x (Rp)',$
+                xrange=[max(x),min(x)],yrange=[24,max(y)],/ylog,$
+            position=[xpos1,ypos1,xpos2,ypos2],/noerase
+
+    cgColorbar, position=[!y.window(0),!x.window(1)+0.05,!y.window(1),$
+                          !x.window(1)+0.08],$
+               ncolors=255,$
+               maxrange=[exp(max(evst_r))],minrange=[1],$
+               title='Counts/s',$
+               charsize=1.4,/xlog,xtickformat='log_label'
+
+    if keyword_set(postscript) then begin
+    device,/close
+    set_plot,'x'
+    !p.font=-1
+    endif
+
+    return
 end
 ;---------------------------------------------------------------------------;
 
@@ -178,46 +178,34 @@ end
 ;----------------------------------------------------------------
 PRO read_part,file,nfrm,Ni_max,xp
 ;----------------------------------------------------------------
-
 ; read the nfrm'th frame of the vector particle file 'file' with Ni_max particles.
 ; store result in xp
 
-;Ni_max=long(0)
-;nt=0l
-;ntout=0l
-frm=0l
+    frm=0l
 
-file = file+'.dat'
-print,' reading...',file
-openr,1,file,/f77_unformatted
-;readu,1,nt
-;readu,1,ntout
-;readu,1,Ni_max
-;print,nt,ntout,Ni_max
+    file = file+'.dat'
+    print,' reading...',file
+    openr,1,file,/f77_unformatted
+    xp=fltarr(Ni_max,3,/nozero)
 
 
+    readu,1,frm
+    print,'  image #.....',frm
+    readu,1,xp
+    frmcnt = 1
 
+    while (frmcnt lt nfrm) do begin
 
-xp=fltarr(Ni_max,3,/nozero)
+       readu,1,frm
+       print,'  image #.....',frm
+       readu,1,xp
+       frmcnt = frmcnt + 1
 
+    endwhile
 
-readu,1,frm
-print,'  image #.....',frm
-readu,1,xp
-frmcnt = 1
+    close,1
 
-while (frmcnt lt nfrm) do begin
-
-   readu,1,frm
-   print,'  image #.....',frm
-   readu,1,xp
-   frmcnt = frmcnt + 1
-
-endwhile
-
-close,1
-
-return
+    return
 end
 
 ;----------------------------------------------------------------
@@ -229,38 +217,30 @@ PRO read_part_scalar,file,nfrm,Ni_max,xp
 ; read the nfrm'th frame of the scalar particle file 'file' with Ni_max particles.
 ; store result in xp
 
-;Ni_max=long(0)
-;nt=0
-;ntout=0
-frm=0l
+    frm=0l
 
-file = file+'.dat'
-print,' reading...',file
-openr,1,file,/f77_unformatted
-;readu,1,nt
-;readu,1,ntout
-;readu,1,Ni_max
-;print,Ni_max
+    file = file+'.dat'
+    print,' reading...',file
+    openr,1,file,/f77_unformatted
+    xp=fltarr(Ni_max,/nozero)
 
-xp=fltarr(Ni_max,/nozero)
+    readu,1,frm
+    print,'  image #.....',frm
+    readu,1,xp
+    frmcnt = 1
 
-readu,1,frm
-print,'  image #.....',frm
-readu,1,xp
-frmcnt = 1
+    while (frmcnt lt nfrm) do begin
 
-while (frmcnt lt nfrm) do begin
+       readu,1,frm
+       print,'  image #.....',frm
+       readu,1,xp
+       frmcnt = frmcnt + 1
 
-   readu,1,frm
-   print,'  image #.....',frm
-   readu,1,xp
-   frmcnt = frmcnt + 1
+    endwhile
 
-endwhile
+    close,1
 
-close,1
-
-return
+    return
 end
 ;----------------------------------------------------------------
 
@@ -271,41 +251,41 @@ end
 ;------------------------------------------------------------
 function get_swap_resp,vc,theta,phi,w,s4,eff
 ;------------------------------------------------------------
-  aeff=0.033
-  aeff=aeff/0.0882d
-  dect_eff=eff
-  aeff=dect_eff*aeff ;cm^2
-  aeff = aeff/1e10   ;km^2
-  mp=1.67262158D-27
-  kb=1.380658D-23
-  e=1.6E-19 
+    aeff=0.033
+    aeff=aeff/0.0882d
+    dect_eff=eff
+    aeff=dect_eff*aeff ;cm^2
+    aeff = aeff/1e10   ;km^2
+    mp=1.67262158D-27
+    kb=1.380658D-23
+    e=1.6E-19 
 
-  ; Energy of particle in eV
-  ee=.5*mp/e*(vc*1000.)^2 ;vc in km/s...ee in eV
+    ; Energy of particle in eV
+    ee=.5*mp/e*(vc*1000.)^2 ;vc in km/s...ee in eV
 
-  ;Tansmission coef at angle phi
-  wp=interpol(w.w, w.phi,phi)
+    ;Tansmission coef at angle phi
+    wp=interpol(w.w, w.phi,phi)
 
-  ;get energy bin of ee
-  junk=min(abs(ee-s4.ecen),iee)
+    ;get energy bin of ee
+    junk=min(abs(ee-s4.ecen),iee)
 
-  ;get x bin from theta 
-  junk=min(abs(theta-(-s4.x)),ix)
+    ;get x bin from theta 
+    junk=min(abs(theta-(-s4.x)),ix)
 
-  ;Energies represented within the bin
-  er1=s4.y(iee,*)*ee
+    ;Energies represented within the bin
+    er1=s4.y(iee,*)*ee
 
-  ;Transmission for this theta within the energy bin
-  tt=s4.arr(*,ix,iee)
+    ;Transmission for this theta within the energy bin
+    tt=s4.arr(*,ix,iee)
 
-  ;Tansmission for this theta with that energy
-  ttnew=interpol(tt,er1, ee)
-  if (ee lt min(er1) and ee gt max(er1)) then ttnew = 0.0d
+    ;Tansmission for this theta with that energy
+    ttnew=interpol(tt,er1, ee)
+    if (ee lt min(er1) and ee gt max(er1)) then ttnew = 0.0d
 
-  ;SWAP response (transmission as a function of phi)*(transmission as a function of E and theta)*(effective area)
-  res = wp*ttnew*aeff
+    ;SWAP response (transmission as a function of phi)*(transmission as a function of E and theta)*(effective area)
+    res = wp*ttnew*aeff
 
-return,res
+    return,res
 end
 ;------------------------------------------------------------
 
@@ -317,44 +297,39 @@ function get_dect_eff, eff
 common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
 
 
-;________________________________________________
-;____Loading in the Dectector Efficiency vs Time
-;________________________________________________
-; __________________________
-; ____Set Types
-; _________________________
-; _____byte 1
-; _____int 2
-; _____long 3
-; _____float 4
-; _____double 5
-; _____complex 6
-; _____string 7 
-fieldtypes=dblarr(3)
-csvfile=file_path+'er_table_lookup_3_2015c.csv'
-fieldtypes(*)=7
-fieldtypes(0)=5
-fieldtypes(2)=5
-fin=READ_CSV_FIELDTYPES(strcompress(csvfile,/remove_all), fieldtypes)
-convert_date_time_to_year_arr_spice, fin.utc, junktime,ef
-met_mid=double(interpol(traj_met, time_traj.tyrr, it_str.tyrr))
+    ;____Loading in the Dectector Efficiency vs Time
+    ; ____Set Types
+    ; _____byte 1
+    ; _____int 2
+    ; _____long 3
+    ; _____float 4
+    ; _____double 5
+    ; _____complex 6
+    ; _____string 7 
+    fieldtypes=dblarr(3)
+    csvfile=file_path+'er_table_lookup_3_2015c.csv'
+    fieldtypes(*)=7
+    fieldtypes(0)=5
+    fieldtypes(2)=5
+    fin=READ_CSV_FIELDTYPES(strcompress(csvfile,/remove_all), fieldtypes)
+    convert_date_time_to_year_arr_spice, fin.utc, junktime,ef
+    met_mid=double(interpol(traj_met, time_traj.tyrr, it_str.tyrr))
 
-;________________________________________________________
-;____Interpolate to find the correct detector efficiency
-;____   a specific time.  A plot is give on slide 6.
-;____   Note that you have to calibraiton data taken 
-;____   with the current operational voltage to 
-;____   calculate the current efficiency. The table
-;____   has been set up to handle this issue. 
-;_______________________________________________________
-met_junk=min(abs(met_mid-fin.met),imet)
-if fin.met(imet) gt met_mid then iarr=[imet-1, imet] else iarr=[imet, imet+1]
-edetector=fin.eff(iarr(0))+(fin.eff(iarr(1))-fin.eff(iarr(0)))/(fin.met(iarr(1))-fin.met(iarr(0)))*(double(met_mid)-fin.met(iarr(0)))
-if fin.met(imet) eq met_mid then edetector = fin.eff(imet)
-;_________________________________________________________________
+    ;____Interpolate to find the correct detector efficiency
+    ;____   a specific time.  A plot is give on slide 6.
+    ;____   Note that you have to calibraiton data taken 
+    ;____   with the current operational voltage to 
+    ;____   calculate the current efficiency. The table
+    ;____   has been set up to handle this issue. 
+    ;_______________________________________________________
+    met_junk=min(abs(met_mid-fin.met),imet)
+    if fin.met(imet) gt met_mid then iarr=[imet-1, imet] else iarr=[imet, imet+1]
+    edetector=fin.eff(iarr(0))+(fin.eff(iarr(1))-fin.eff(iarr(0)))/(fin.met(iarr(1))-fin.met(iarr(0)))*(double(met_mid)-fin.met(iarr(0)))
+    if fin.met(imet) eq met_mid then edetector = fin.eff(imet)
+    ;_________________________________________________________________
 
 
-return,edetector
+    return,edetector
 end
 ;------------------------------------------------------------
 
@@ -362,34 +337,34 @@ end
 ;------------------------------------------------------------
 function get_NH_vr
 ;------------------------------------------------------------
-common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
+    common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
 
-;_________________________________________________
-;___Calculate the speed along the sun-spaceraft
-;___   vector (radial speed) for interpolated values
-;___   See slide 3. 
-;__________________________________________________
-is=where( traj_data.nh_hgi_d.r gt 0)
-vr_all=dblarr(n_elements(traj_data.NH_HGI_D))
-vmag_all=dblarr(n_elements(traj_data.NH_HGI_D))
-vr_all(*)=-1000000.0
-vmag_all(*)=-1000000.0
-for i=0L, n_elements(traj_data.NH_HGI_D)-1L do begin
-  if traj_data.nh_hgi_d(i).x gt -1000000.0 then begin
-    v_temp=[traj_data.nh_hgi_d(i).vx,traj_data.nh_hgi_d(i).vy,traj_data.nh_hgi_d(i).vz]
-    vmag_all(i)=sqrt(v_temp(0)^2+v_temp(1)^2+v_temp(2)^2)
-    x_temp=[traj_data.nh_hgi_d(i).x,traj_data.nh_hgi_d(i).y,traj_data.nh_hgi_d(i).z]
-    xmag=sqrt(x_temp(0)^2+x_temp(1)^2+x_temp(2)^2)
-    vr_all(i)=transpose(v_temp)#x_temp/xmag
-  endif
-endfor 
-;_________________________________________________________________
-;___ Interpolate to find the speed for the time
-;___     of interest 11/01/2008 18:17:38.734331
-;_________________________________________________________________
-it_vr=interpol( vr_all(is),time_traj(is).tyrr, it_str.tyrr) 
+    ;_________________________________________________
+    ;___Calculate the speed along the sun-spaceraft
+    ;___   vector (radial speed) for interpolated values
+    ;___   See slide 3. 
+    ;__________________________________________________
+    is=where( traj_data.nh_hgi_d.r gt 0)
+    vr_all=dblarr(n_elements(traj_data.NH_HGI_D))
+    vmag_all=dblarr(n_elements(traj_data.NH_HGI_D))
+    vr_all(*)=-1000000.0
+    vmag_all(*)=-1000000.0
+    for i=0L, n_elements(traj_data.NH_HGI_D)-1L do begin
+      if traj_data.nh_hgi_d(i).x gt -1000000.0 then begin
+        v_temp=[traj_data.nh_hgi_d(i).vx,traj_data.nh_hgi_d(i).vy,traj_data.nh_hgi_d(i).vz]
+        vmag_all(i)=sqrt(v_temp(0)^2+v_temp(1)^2+v_temp(2)^2)
+        x_temp=[traj_data.nh_hgi_d(i).x,traj_data.nh_hgi_d(i).y,traj_data.nh_hgi_d(i).z]
+        xmag=sqrt(x_temp(0)^2+x_temp(1)^2+x_temp(2)^2)
+        vr_all(i)=transpose(v_temp)#x_temp/xmag
+      endif
+    endfor 
+    ;_________________________________________________________________
+    ;___ Interpolate to find the speed for the time
+    ;___     of interest 11/01/2008 18:17:38.734331
+    ;_________________________________________________________________
+    it_vr=interpol( vr_all(is),time_traj(is).tyrr, it_str.tyrr) 
 
-return,it_vr
+    return,it_vr
 end
 ;------------------------------------------------------------
 
@@ -426,40 +401,40 @@ pro get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
 ;   resp: The SWAP response to the macroparticle
 ; Who knows:
 ;   s4
-  ; spacecraft orientation (i.e. sunward direction)
-  common orientation, stheta, sphi, spin
-  
-  ; convert direction of particle motion in pluto coords, vpp1, to direction of particle
-  ; motion in SWAP coords
-  ; first rotate +y to +x (this puts it in swap coords for orientation (theta=0,phi=0,spin=0)
-  vpp1_swap = rotZmat(-90.0*!DtoR)##transpose(vpp1) 
-  ; then apply rotations of the spacecraft in turn
-  vpp1_swap = rotZmat(sphi*!DtoR)##rotXmat(stheta*!DtoR)##rotYmat(spin*!DtoR)##vpp1_swap
+    ; spacecraft orientation (i.e. sunward direction)
+    common orientation, stheta, sphi, spin
+
+    ; convert direction of particle motion in pluto coords, vpp1, to direction of particle
+    ; motion in SWAP coords
+    ; first rotate +y to +x (this puts it in swap coords for orientation (theta=0,phi=0,spin=0)
+    vpp1_swap = rotZmat(-90.0*!DtoR)##transpose(vpp1) 
+    ; then apply rotations of the spacecraft in turn
+    vpp1_swap = rotZmat(sphi*!DtoR)##rotXmat(stheta*!DtoR)##rotYmat(spin*!DtoR)##vpp1_swap
 
 
-  ; get the look direction
-  vpp1_swap_look = -vpp1_swap
+    ; get the look direction
+    vpp1_swap_look = -vpp1_swap
 
-  ; get angles of the look direction
-  lphi = atan(vpp1_swap_look(0),vpp1_swap_look(1))*!radeg
-  ltheta = -atan(vpp1_swap_look(2),sqrt(vpp1_swap_look(0)^2 + vpp1_swap_look(1)^2))*!radeg
+    ; get angles of the look direction
+    lphi = atan(vpp1_swap_look(0),vpp1_swap_look(1))*!radeg
+    ltheta = -atan(vpp1_swap_look(2),sqrt(vpp1_swap_look(0)^2 + vpp1_swap_look(1)^2))*!radeg
 
-  resp = get_swap_resp(vpp2,ltheta,lphi,wphi,s4,eff)
+    resp = get_swap_resp(vpp2,ltheta,lphi,wphi,s4,eff)
 
 
-return
+    return
 end
 ;----------------------------------------------------------------------
 
 function get_NH_local_particles, xp, x, y, z, radius, tags, mrat=mrat
-if (keyword_set(mrat)) then begin
-    return, where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
-               (mrat(*) le 0.1) and $
-               (tags(*) ge 1.0), /null)
-endif else begin
-    return, where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
-               (tags(*) ge 1.0), /null)
-endelse
+    if (keyword_set(mrat)) then begin
+        return, where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
+                   (mrat(*) le 0.1) and $
+                   (tags(*) ge 1.0), /null)
+    endif else begin
+        return, where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
+                   (tags(*) ge 1.0), /null)
+    endelse
 end
 
 ;----------------------------------------------------------------------
@@ -475,73 +450,73 @@ pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
 ;   heavy: Set keyword to restrict output to heavy particles
 ; Output:
 ;   levst: The energy histogram of particle counts
-common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
+    common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
 
-vr = get_NH_vr()
+    vr = get_NH_vr()
 
-m1 = 1 ;hybrid simulation mass scaling
- 
-dE = 1.0
-hmin = 1.0
-hmax = 100000.
+    m1 = 1 ;hybrid simulation mass scaling
+     
+    dE = 1.0
+    hmin = 1.0
+    hmax = 100000.
 
-nh = fix((hmax-hmin)/dE)+1
+    nh = fix((hmax-hmin)/dE)+1
 
-xsz=1000
-ysz=1000
+    xsz=1000
+    ysz=1000
 
-radius = 2000.0
-dV = (4.0/3.0)*!DPI*radius^3
+    radius = 2000.0
+    dV = (4.0/3.0)*!DPI*radius^3
 
-count = 0l
+    count = 0l
 
-if (keyword_set(h)) then begin
-    particles = get_NH_local_particles(xp, xcur, ycur, zcur, radius, tags, mrat=mrat)
-endif else begin
-    particles = get_NH_local_particles(xp, xcur, ycur, zcur, radius, tags)
-endelse
+    if (keyword_set(h)) then begin
+        particles = get_NH_local_particles(xp, xcur, ycur, zcur, radius, tags, mrat=mrat)
+    endif else begin
+        particles = get_NH_local_particles(xp, xcur, ycur, zcur, radius, tags)
+    endelse
 
-e_arr = 0
-cnt_arr = 0
-for l = 0ll,n_elements(particles)-1 do begin
+    e_arr = 0
+    cnt_arr = 0
+    for l = 0ll,n_elements(particles)-1 do begin
 
-  
-  vpp = reform(vp(particles(l),*))
-  vpp(0) = vpp(0)+vr
-  vpp2 = sqrt(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)
-  vpp1 = vpp/vpp2
-  
-  get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
+      
+      vpp = reform(vp(particles(l),*))
+      vpp(0) = vpp(0)+vr
+      vpp2 = sqrt(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)
+      vpp1 = vpp/vpp2
+      
+      get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
 
-  nv = vpp2/(dV*beta*beta_p(particles(l)))
+      nv = vpp2/(dV*beta*beta_p(particles(l)))
 
-  ; energy of each macro particle within volume
-  e_arr = [e_arr,(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)/mrat(particles(l))]
-  ; number of micro particles for each macro particle
-  cnt_arr = [cnt_arr,nv*resp]
-  
-endfor
+      ; energy of each macro particle within volume
+      e_arr = [e_arr,(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)/mrat(particles(l))]
+      ; number of micro particles for each macro particle
+      cnt_arr = [cnt_arr,nv*resp]
+      
+    endfor
 
-; Convert energy to eV
-e_arr = 0.5*m1*1.67e-27*e_arr*1e6/1.6e-19
+    ; Convert energy to eV
+    e_arr = 0.5*m1*1.67e-27*e_arr*1e6/1.6e-19
 
-; build histogram of microparticle counts
-levst = fltarr(n_elements(bins))
-foreach bin, bins, i do begin
-   part_in_bin = where(e_arr ge bin.e_min and e_arr lt bin.e_max, count)
-   if (count ne 0) then begin
-       levst(i) = total(cnt_arr(part_in_bin))
-   endif
-endforeach
+    ; build histogram of microparticle counts
+    levst = fltarr(n_elements(bins))
+    foreach bin, bins, i do begin
+       part_in_bin = where(e_arr ge bin.e_min and e_arr lt bin.e_max, count)
+       if (count ne 0) then begin
+           levst(i) = total(cnt_arr(part_in_bin))
+       endif
+    endforeach
 
-print,'max levst...',max(levst)
+    print,'max levst...',max(levst)
 
 
-return
+    return
 end
 ;----------------------------------------------------------------------
 pro get_pluto_position, para, pluto_position
-pluto_position = para.qx(n_elements(para.qx)/2 + para.pluto_offset)
+    pluto_position = para.qx(n_elements(para.qx)/2 + para.pluto_offset)
 end
 
 pro build_flyby_trajectory, para, n, p0, p1, traj 
@@ -554,19 +529,19 @@ pro build_flyby_trajectory, para, n, p0, p1, traj
 ; Output:
 ;   traj: output trajectory points {x:[..],y[..]}
 
-rpl = para.RIo
+    rpl = para.RIo
 
-maxx = para.qx(-1)
-maxy = para.qy(-1)
-maxz = para.qz(-1)
+    maxx = para.qx(-1)
+    maxy = para.qy(-1)
+    maxz = para.qz(-1)
 
-slp =  (p1.y-p0.y)/(p1.x-p0.x)
+    slp =  (p1.y-p0.y)/(p1.x-p0.x)
 
-xtr = findgen(n)*maxx/n
-get_pluto_position, para, pluto_position
-ytr = -slp*(xtr - pluto_position) + p0.y*rpl + maxy/2
+    xtr = findgen(n)*maxx/n
+    get_pluto_position, para, pluto_position
+    ytr = -slp*(xtr - pluto_position) + p0.y*rpl + maxy/2
 
-traj = {x:xtr, y:ytr}
+    traj = {x:xtr, y:ytr}
 end
 
 pro make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
@@ -579,55 +554,55 @@ pro make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bin
 ; Output:
 ;   levst_arr: Synthetic energy spectrogram
 
-; radius of pluto
-rpl = 1187.
+    ; radius of pluto
+    rpl = 1187.
 
-xtr = traj.x
-ytr = traj.y
+    xtr = traj.x
+    ytr = traj.y
 
-isHeavy = 0
+    isHeavy = 0
 
-maxx = p.qx(-1)
-maxy = p.qy(-1)
-maxz = p.qz(-1)
+    maxx = p.qx(-1)
+    maxy = p.qy(-1)
+    maxz = p.qz(-1)
 
-; Build a histogram of micro particle counts using the SWAP energy bins (log scale)
-; First read what the SWAP bins are.
-readbins, bins
-; We now have the bin values
-lxE = bins.e_mid
+    ; Build a histogram of micro particle counts using the SWAP energy bins (log scale)
+    ; First read what the SWAP bins are.
+    readbins, bins
+    ; We now have the bin values
+    lxE = bins.e_mid
 
-levst_arr = fltarr(n_elements(xtr),n_elements(bins))
-cnt = 0
-for i = n_elements(xtr)-1,0,-1 do begin
-   
-   xcur=xtr(i)
-   ycur=ytr(i)
-   
-   !p.multi=[0,1,1]
-   if (isHeavy) then begin
-       make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags, /heavy
-   endif else begin
-       make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags
-   endelse
-   
-   levst_arr(cnt,*) = levst
-   
-   contour,alog(levst_arr(*,*)>1),xtr(*),lxE,/ylog,$
-           xtitle='x (Rp)',yrange=[24,100000],$
-           xstyle=1,ytitle='Energy/q [eV/q]',/fill,nlev=50
-   cnt = cnt+1
+    levst_arr = fltarr(n_elements(xtr),n_elements(bins))
+    cnt = 0
+    for i = n_elements(xtr)-1,0,-1 do begin
+       
+       xcur=xtr(i)
+       ycur=ytr(i)
+       
+       !p.multi=[0,1,1]
+       if (isHeavy) then begin
+           make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags, /heavy
+       endif else begin
+           make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags
+       endelse
+       
+       levst_arr(cnt,*) = levst
+       
+       contour,alog(levst_arr(*,*)>1),xtr(*),lxE,/ylog,$
+               xtitle='x (Rp)',yrange=[24,100000],$
+               xstyle=1,ytitle='Energy/q [eV/q]',/fill,nlev=50
+       cnt = cnt+1
 
 
-endfor
-end
+    endfor
+    end
 
-pro get_ave_v, vp, vave
-sum = [0,0,0]
-for i=0, n_elements(vp) do begin
-    sum = sum + vp(i)
-endfor
-vave = sum/n_elements(vp)
+    pro get_ave_v, vp, vave
+    sum = [0,0,0]
+    for i=0, n_elements(vp) do begin
+        sum = sum + vp(i)
+    endfor
+    vave = sum/n_elements(vp)
 end
 
 ;----------------------------------------------------------------------
