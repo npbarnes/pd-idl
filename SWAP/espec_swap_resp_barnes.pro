@@ -732,32 +732,9 @@ read_part_scalar,mratfile,nfrm,p.Ni_max,mrat
 read_part_scalar,beta_p_file,nfrm,p.Ni_max,beta_p
 read_part_scalar,tags_file,nfrm,p.Ni_max,tags
 
-make_flyby_e_spectrogram, dir, p, {x0:0.,x1:110.,y0:12.,y1:-30.}, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
-
-im = contour(alog(levst_arr(0:cnt,*)>1),x_arr(0:cnt),lxE,/ylog,$
-             xtitle='x (Rp)',yrange=[24,100000],$;xrange=[max(x_arr),min(x_arr)],$
-             xstyle=1,ytitle='Energy/q [eV/q]',ystyle=1,$
-             xtickdir=1,ytickdir=1,dimensions=[500,500],axis_style=2,$
-             font_size=12,/fill,rgb_table=33,n_levels=250,margin=0.15,name='espec')
-
-
-cb = colorbar(target=espec,title='Counts')
-cb.Save,"espec.pdf",border=30
-
-xpos1=0.15
-xpos2= 0.85
-ypos1 = 0.2
-ypos2 = 0.8
-
-evst_r = alog(levst_arr(1:cnt,*)>1)
-evst_r(0,0) = max(evst_r);10.8
-evst = bytscl(evst_r)
-wh = where(evst eq 0b)
-evst(wh) = 255b
 build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:110.,y:-30.}, traj
 make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
 
-img_cont_ylog,evst(*,*),x_arr(*),lxE(*),dunit,xpos1,xpos2,ypos1,ypos2,evst_r,/postscript
 get_pluto_position, p, pluto_position
 xpl = reverse((traj.x - pluto_position)/p.RIo)
 
