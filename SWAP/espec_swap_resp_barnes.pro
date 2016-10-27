@@ -540,8 +540,36 @@ print,'max levst...',max(levst)
 return
 end
 ;----------------------------------------------------------------------
+pro get_pluto_position, para, pluto_position
+pluto_position = para.qx(n_elements(para.qx)/2 + para.pluto_offset)
+end
 
-pro make_flyby_e_spectrogram, dir, p, x, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
+pro build_flyby_trajectory, para, n, p0, p1, traj 
+;----------------------------------------------------------------------
+; Arguments:
+; Input:
+;   para: parameter structure
+;   p0,p1: points, {x:*,y:*}, along NH trajectory
+;   n: number of points along the trajectory
+; Output:
+;   traj: output trajectory points {x:[..],y[..]}
+
+rpl = para.RIo
+
+maxx = para.qx(-1)
+maxy = para.qy(-1)
+maxz = para.qz(-1)
+
+slp =  (p1.y-p0.y)/(p1.x-p0.x)
+
+xtr = findgen(n)*maxx/n
+get_pluto_position, para, pluto_position
+ytr = -slp*(xtr - pluto_position) + p0.y*rpl + maxy/2
+
+traj = {x:xtr, y:ytr}
+end
+
+pro make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -554,22 +582,14 @@ pro make_flyby_e_spectrogram, dir, p, x, levst_arr, xp,vp,mrat,beta_p,eff,bins,l
 ; radius of pluto
 rpl = 1187.
 
+xtr = traj.x
+ytr = traj.y
+
 isHeavy = 0
 
-; slope of NH trajectory
-slp =  (x.y1-x.y0)/(x.x1-x.x0)
-
-; Read coordinate file to get the size of the domain.
-read_coords,dir,qx,qy,qz
-
-maxx = qx(-1)
-maxy = qy(-1)
-maxz = qz(-1)
-
-; Sample points along the NH trajectory
-xtr = (findgen(p.nx))*maxx/p.nx
-pluto_position = qx(n_elements(qx)/2 + p.pluto_offset)
-ytr = -slp*(xtr - pluto_position) + x.y0*rpl + maxy/2
+maxx = p.qx(-1)
+maxy = p.qy(-1)
+maxz = p.qz(-1)
 
 ; Build a histogram of micro particle counts using the SWAP energy bins (log scale)
 ; First read what the SWAP bins are.
@@ -577,24 +597,9 @@ readbins, bins
 ; We now have the bin values
 lxE = bins.e_mid
 
-xpl = (xtr - pluto_position)/rpl
-x_arr = xpl(p.nx-1)
-
-xcur = xtr(p.nx-1)
-ycur = ytr(p.nx-1)
-if (isHeavy) then begin
-    make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags, /heavy
-endif else begin
-    make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags
-endelse
-levst_arr = fltarr(n_elements(xtr)/2,n_elements(levst))
-levst_arr(0,*) = levst
-
-
+levst_arr = fltarr(n_elements(xtr),n_elements(bins))
 cnt = 0
-
-for i = p.nx-3,0,-2 do begin
-   cnt = cnt+1
+for i = n_elements(xtr)-1,0,-1 do begin
    
    xcur=xtr(i)
    ycur=ytr(i)
@@ -607,13 +612,22 @@ for i = p.nx-3,0,-2 do begin
    endelse
    
    levst_arr(cnt,*) = levst
-   x_arr = [x_arr,xpl(i)]
    
-   contour,alog(levst_arr(0:cnt,*)>1),x_arr(0:cnt),lxE,/ylog,$
+   contour,alog(levst_arr(*,*)>1),xtr(*),lxE,/ylog,$
            xtitle='x (Rp)',yrange=[24,100000],$
            xstyle=1,ytitle='Energy/q [eV/q]',/fill,nlev=50
+   cnt = cnt+1
+
 
 endfor
+end
+
+pro get_ave_v, vp, vave
+sum = [0,0,0]
+for i=0, n_elements(vp) do begin
+    sum = sum + vp(i)
+endfor
+vave = sum/n_elements(vp)
 end
 
 ;----------------------------------------------------------------------
@@ -740,12 +754,17 @@ evst_r(0,0) = max(evst_r);10.8
 evst = bytscl(evst_r)
 wh = where(evst eq 0b)
 evst(wh) = 255b
+build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:110.,y:-30.}, traj
+make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
 
 img_cont_ylog,evst(*,*),x_arr(*),lxE(*),dunit,xpos1,xpos2,ypos1,ypos2,evst_r,/postscript
+get_pluto_position, p, pluto_position
+xpl = reverse((traj.x - pluto_position)/p.RIo)
 
-cnt_arr = levst_arr(0:cnt,*)
-xpos = x_arr(0:cnt)
-ebins = lxE
+cnt_arr = levst_arr(*,*)
+xpos = xpl(*)
+readbins, ebins
+ebins = ebins.e_mid
 
 if (isHeavy) then begin
     save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin)+" isHeavy="+string(isHeavy), filename='espec-'+args[5]+'-heavy.sav',cnt_arr,xpos,ebins
