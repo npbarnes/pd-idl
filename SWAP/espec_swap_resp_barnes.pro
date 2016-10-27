@@ -670,8 +670,11 @@ vidStream = oVid.AddVideoStream(width, height, fps)
 device,decomposed=0
 loadct,39
 
-
-nfrm=p.nt/1000l
+if(tag_exist(p,"part_nout")) then begin
+    nfrm=p.nt/p.part_nout
+endif else begin
+    nfrm=p.nt/1000l
+endelse
 
 xfile = dir+'c.xp_'+strtrim(string(procnum),2)
 vfile = dir+'c.vp_'+strtrim(string(procnum),2)
