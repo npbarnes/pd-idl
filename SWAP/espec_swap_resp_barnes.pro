@@ -450,7 +450,7 @@ pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
 ;   heavy: Set keyword to restrict output to heavy particles
 ; Output:
 ;   levst: The energy histogram of particle counts
-    common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
+    common fit_info,s4,wphi
 
     vr = get_NH_vr()
 
@@ -609,7 +609,7 @@ end
 ;main program
 ;----------------------------------------------------------------------
 
-common fit_info,f_lxE,f_lxE_min,f_lxE_max,f_levst,f_lxyz,f_lth,fit_arr,f_ani,s4,wphi
+common fit_info,s4,wphi
 common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
 common orientation, stheta, sphi, spin
 
@@ -657,39 +657,18 @@ isHeavy = (args[4] eq "heavy")
 
 read_para,dir,p
 
-mp=1.67e-27
-nfrm = p.nt/p.nout
 procnum=12
-ndx = 2.0
-lth = 20.0
-ani = 1.
-
-rio = 1800./40.
-
-xsz=1100l
-ysz=1000l
 
 file = 'vdist.mp4'
-width = xsz
-height = ysz
-frames = 180
+width = 1100l
+height = 1000l
 fps = 30
-speed = 2
-samplerate = 22050L
 
-        ; Create object and initialize video/audio streams
+; Create object and initialize video/audio streams
 oVid = IDLffVideoWrite(file)
 vidStream = oVid.AddVideoStream(width, height, fps)
-
-
-
 device,decomposed=0
 loadct,39
-
-file = 'c.np_3d_'+strtrim(string(procnum),2)
-c_read_3d_m_32,dir,file,nfrm,np
-
-
 
 
 nfrm=p.nt/1000l
