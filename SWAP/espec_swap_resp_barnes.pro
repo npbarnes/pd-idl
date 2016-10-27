@@ -595,9 +595,9 @@ pro make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bin
 
 
     endfor
-    end
+end
 
-    pro get_ave_v, vp, vave
+pro get_ave_v, vp, vave
     sum = [0,0,0]
     for i=0, n_elements(vp) do begin
         sum = sum + vp(i)
