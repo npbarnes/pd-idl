@@ -451,6 +451,16 @@ return
 end
 ;----------------------------------------------------------------------
 
+function get_NH_local_particles, xp, x, y, z, radius, tags, mrat=mrat
+if (keyword_set(mrat)) then begin
+    return, where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
+               (mrat(*) le 0.1) and $
+               (tags(*) ge 1.0), /null)
+endif else begin
+    return, where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
+               (tags(*) ge 1.0), /null)
+endelse
+end
 
 ;----------------------------------------------------------------------
 pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
@@ -486,41 +496,31 @@ dV = (4.0/3.0)*!DPI*radius^3
 count = 0l
 
 if (keyword_set(h)) then begin
-    particles = where((sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
-               (mrat(*) le 0.1) and $
-               (tags(*) ge 1.0), count)
+    particles = get_NH_local_particles(xp, xcur, ycur, zcur, radius, tags, mrat=mrat)
 endif else begin
-    particles = where((sqrt( (xp(*,0)-xcur)^2 + (xp(*,1)-ycur)^2 + (xp(*,2)-zcur)^2 ) le radius) and $
-               (tags(*) ge 1.0), count)
+    particles = get_NH_local_particles(xp, xcur, ycur, zcur, radius, tags)
 endelse
 
-if (count ne 0) then begin
-   e_arr = 0
-   cnt_arr = 0
-   for l = 0ll,n_elements(particles)-1 do begin
+e_arr = 0
+cnt_arr = 0
+for l = 0ll,n_elements(particles)-1 do begin
 
-      
-      vpp = reform(vp(particles(l),*))
-      vpp(0) = vpp(0)+vr
-      vpp2 = sqrt(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)
-      vpp1 = vpp/vpp2
-      
-      get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
+  
+  vpp = reform(vp(particles(l),*))
+  vpp(0) = vpp(0)+vr
+  vpp2 = sqrt(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)
+  vpp1 = vpp/vpp2
+  
+  get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
 
-      nv = vpp2/(dV*beta*beta_p(particles(l)))
+  nv = vpp2/(dV*beta*beta_p(particles(l)))
 
-      ; energy of each macro particle within volume
-      e_arr = [e_arr,(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)/mrat(particles(l))]
-      ; number of micro particles for each macro particle
-      cnt_arr = [cnt_arr,nv*resp]
-      
-   endfor
-endif else begin
-    print, "No macro-particles found in range of NH."
-    ; return an empty histogram
-    levst = fltarr(n_elements(bins))
-    return
-endelse
+  ; energy of each macro particle within volume
+  e_arr = [e_arr,(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)/mrat(particles(l))]
+  ; number of micro particles for each macro particle
+  cnt_arr = [cnt_arr,nv*resp]
+  
+endfor
 
 ; Convert energy to eV
 e_arr = 0.5*m1*1.67e-27*e_arr*1e6/1.6e-19
