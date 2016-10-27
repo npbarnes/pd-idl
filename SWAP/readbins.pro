@@ -8,5 +8,7 @@ pro readbins, bins
        bins = [bin,bins]
     endwhile
 
+    close,3
+
     return
 end
