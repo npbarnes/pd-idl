@@ -597,14 +597,42 @@ pro make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bin
     endfor
 end
 
-pro get_ave_v, vp, vave
-    sum = [0,0,0]
-    for i=0, n_elements(vp) do begin
-        sum = sum + vp(i)
+pro get_ave_v, beta_p, vp, vave
+    vave = [0.,0.,0.]
+    
+    ; dV and volume will cancel out in the next calculation anyway
+    ; so I just left them out.
+    num_parts = 1./(beta_p(*))
+
+    for i=0,2 do begin
+        vave(i) = total(num_parts(*)*vp(*,i))/total(num_parts(*))
     endfor
-    vave = sum/n_elements(vp)
+    print, vave
 end
 
+pro flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat
+; Arguments:
+; Input:
+;   traj: The trajectory {x:[..],y:[..]}
+;   xp,vp,tags: Hybrid output
+; Output:
+;   vdat: velocity data
+    xtr = traj.x
+    ytr = traj.y
+    zcur = p.qz(-1)/2.
+
+    radius = 2000.
+    vdat = []
+    for i=n_elements(xtr)-1,0,-1 do begin
+        xcur = xtr(i)
+        ycur = ytr(i)
+        particles = get_NH_local_particles(xp, xcur, ycur, zcur, radius, tags)
+        if (n_elements(vp(particles,*)) eq 0) then break
+        get_ave_v, beta_p(particles), vp(particles,*), vave
+        vave = sqrt(vave(0)^2 + vave(1)^2 + vave(2)^2)
+        vdat = [vdat,vave]
+    endfor
+end
 ;----------------------------------------------------------------------
 ;main program
 ;----------------------------------------------------------------------
@@ -691,9 +719,12 @@ read_part_scalar,tags_file,nfrm,p.Ni_max,tags
 
 build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:110.,y:-30.}, traj
 make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
+flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat
 
 get_pluto_position, p, pluto_position
 xpl = reverse((traj.x - pluto_position)/p.RIo)
+
+save, filename='v.sav', vdat, xpl
 
 cnt_arr = levst_arr(*,*)
 xpos = xpl(*)
