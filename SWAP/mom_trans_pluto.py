@@ -50,21 +50,6 @@ class mom_trans:
 
         return t_arr, s_arr
 
-    def traj_energies(self, ax, x1, y1, x2, y2, mass_list, kwargs_list):
-        slp = (y2-y1)/(x2-x1)
-        xlst = np.linspace(-20*self.rp, 200*self.rp, 500)
-        ylst = -slp*xlst + y1*self.rp + 25*self.rp
-
-        slst = []
-        for x, y in zip(xlst, ylst):
-            self.y = y
-            t, s = self.integrate_until(10000, x)
-            slst.append(s[-1,:])
-
-        slst = np.array(slst)
-
-        self._plot_energies(ax, slst, mass_list, kwargs_list)
-
 
     def _plot_energies(self, ax, s_arr, mass_list, kwargs_list):
         for mass, kwargs in zip(mass_list, kwargs_list):
