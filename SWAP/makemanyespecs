@@ -1,17 +1,9 @@
-./makeespec "$1" 0 0 0 "notHeavy" 1
-./makeespec "$1" 0 180 0 "notHeavy" 2
-./makeespec "$1" 0 -90 0 "notHeavy" 3
-./makeespec "$1" 0 90 0 "notHeavy" 4
-./makeespec "$1" 0 0 90 "notHeavy" 5
-./makeespec "$1" 0 180 90 "notHeavy" 6
-./makeespec "$1" 90 0 90 "notHeavy" 7
-./makeespec "$1" -90 0 90 "notHeavy" 8
-
-./makeespec "$1" 0 0 0 "heavy" 1
-./makeespec "$1" 0 180 0 "heavy" 2
-./makeespec "$1" 0 -90 0 "heavy" 3
-./makeespec "$1" 0 90 0 "heavy" 4
-./makeespec "$1" 0 0 90 "heavy" 5
-./makeespec "$1" 0 180 90 "heavy" 6
-./makeespec "$1" 90 0 90 "heavy" 7
-./makeespec "$1" -90 0 90 "heavy" 8
+# Key:      dir  theta  phi  spin name
+./makeespec "$1"   0     0     0    1
+./makeespec "$1"   0   180     0    2
+./makeespec "$1"   0   -90     0    3
+./makeespec "$1"   0    90     0    4
+./makeespec "$1"   0     0    90    5
+./makeespec "$1"   0   180    90    6
+./makeespec "$1"  90     0    90    7
+./makeespec "$1" -90     0    90    8

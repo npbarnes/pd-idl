@@ -176,14 +176,14 @@ end
 
 
 ;----------------------------------------------------------------
-PRO read_part,file,nfrm,Ni_max,xp
+PRO read_part,ffile,nfrm,Ni_max,xp
 ;----------------------------------------------------------------
 ; read the nfrm'th frame of the vector particle file 'file' with Ni_max particles.
 ; store result in xp
 
     frm=0l
 
-    file = file+'.dat'
+    file = ffile+'.dat'
     print,' reading...',file
     openr,1,file,/f77_unformatted
     xp=fltarr(Ni_max,3,/nozero)
@@ -212,14 +212,14 @@ end
 
 
 ;----------------------------------------------------------------
-PRO read_part_scalar,file,nfrm,Ni_max,xp
+PRO read_part_scalar,ffile,nfrm,Ni_max,xp
 ;----------------------------------------------------------------
 ; read the nfrm'th frame of the scalar particle file 'file' with Ni_max particles.
 ; store result in xp
 
     frm=0l
 
-    file = file+'.dat'
+    file = ffile+'.dat'
     print,' reading...',file
     openr,1,file,/f77_unformatted
     xp=fltarr(Ni_max,/nozero)
@@ -262,6 +262,7 @@ function get_swap_resp,vc,theta,phi,w,s4,eff
 
     ; Energy of particle in eV
     ee=.5*mp/e*(vc*1000.)^2 ;vc in km/s...ee in eV
+    ;ee=300.
 
     ;Tansmission coef at angle phi
     wp=interpol(w.w, w.phi,phi)
@@ -280,7 +281,7 @@ function get_swap_resp,vc,theta,phi,w,s4,eff
 
     ;Tansmission for this theta with that energy
     ttnew=interpol(tt,er1, ee)
-    if (ee lt min(er1) and ee gt max(er1)) then ttnew = 0.0d
+    if (ee lt min(er1) or ee gt max(er1)) then ttnew = 0.0d
 
     ;SWAP response (transmission as a function of phi)*(transmission as a function of E and theta)*(effective area)
     res = wp*ttnew*aeff
@@ -426,20 +427,18 @@ pro get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
 end
 ;----------------------------------------------------------------------
 
-function get_NH_local_particles, xp, x, y, z, radius, tags, mrat=mrat
-    if (keyword_set(mrat)) then begin
-        return, where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
-                   (mrat(*) le 0.1) and $
-                   (tags(*) ge 1.0), /null)
-    endif else begin
-        return, where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
-                   (tags(*) ge 1.0), /null)
-    endelse
+pro get_NH_local_particles, xp, x, y, z, radius, tags, mrat, lights, heavies
+    lights = where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
+               (mrat(*) gt 0.1) and $
+               (tags(*) ge 1.0), /null)
+    heavies = where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
+               (mrat(*) le 0.1) and $
+               (tags(*) ge 1.0), /null)
 end
 
 ;----------------------------------------------------------------------
 pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
-               beta,eff,bins,levst,tags, heavy=h
+               beta,eff,bins,tags,particles,spectrum
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -465,16 +464,11 @@ pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
     xsz=1000
     ysz=1000
 
-    radius = 2000.0
+    radius = 1000.0
     dV = (4.0/3.0)*!DPI*radius^3
 
     count = 0l
 
-    if (keyword_set(h)) then begin
-        particles = get_NH_local_particles(xp, xcur, ycur, zcur, radius, tags, mrat=mrat)
-    endif else begin
-        particles = get_NH_local_particles(xp, xcur, ycur, zcur, radius, tags)
-    endelse
 
     e_arr = 0
     cnt_arr = 0
@@ -501,22 +495,23 @@ pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
     e_arr = 0.5*m1*1.67e-27*e_arr*1e6/1.6e-19
 
     ; build histogram of microparticle counts
-    levst = fltarr(n_elements(bins))
+    spectrum = fltarr(n_elements(bins))
     foreach bin, bins, i do begin
        part_in_bin = where(e_arr ge bin.e_min and e_arr lt bin.e_max, count)
        if (count ne 0) then begin
-           levst(i) = total(cnt_arr(part_in_bin))
+           spectrum(i) = total(cnt_arr(part_in_bin))
        endif
     endforeach
-
-    print,'max levst...',max(levst)
-
 
     return
 end
 ;----------------------------------------------------------------------
 pro get_pluto_position, para, pluto_position
-    pluto_position = para.qx(n_elements(para.qx)/2 + para.pluto_offset)
+    if (tag_exist(para,"pluto_offset")) then begin
+        pluto_position = para.qx(n_elements(para.qx)/2 + para.pluto_offset)
+    endif else begin
+        pluto_position = para.qx(n_elements(para.qx)/2 + 30)
+    endelse
 end
 
 pro build_flyby_trajectory, para, n, p0, p1, traj 
@@ -544,7 +539,7 @@ pro build_flyby_trajectory, para, n, p0, p1, traj
     traj = {x:xtr, y:ytr}
 end
 
-pro make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
+pro make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff,bins, tags, light_arr, heavy_arr
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -560,11 +555,10 @@ pro make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bin
     xtr = traj.x
     ytr = traj.y
 
-    isHeavy = 0
-
     maxx = p.qx(-1)
     maxy = p.qy(-1)
     maxz = p.qz(-1)
+
 
     ; Build a histogram of micro particle counts using the SWAP energy bins (log scale)
     ; First read what the SWAP bins are.
@@ -572,23 +566,28 @@ pro make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bin
     ; We now have the bin values
     lxE = bins.e_mid
 
-    levst_arr = fltarr(n_elements(xtr),n_elements(bins))
+    light_arr = fltarr(n_elements(xtr),n_elements(bins))
+    heavy_arr = fltarr(n_elements(xtr),n_elements(bins))
+
     cnt = 0
+
+    zcur = maxz/2
+    radius = 2000.0
     for i = n_elements(xtr)-1,0,-1 do begin
        
        xcur=xtr(i)
        ycur=ytr(i)
        
        !p.multi=[0,1,1]
-       if (isHeavy) then begin
-           make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags, /heavy
-       endif else begin
-           make_e_spectrum,xcur,ycur,maxz/2,xp,vp,mrat,beta_p,p.beta,eff,bins,levst,tags
-       endelse
+       get_NH_local_particles, xp, xcur, ycur, zcur, radius, tags, mrat, lights, heavies
+
+       make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p,p.beta,eff,bins,tags,lights,lightspec
+       make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p,p.beta,eff,bins,tags,heavies,heavyspec
        
-       levst_arr(cnt,*) = levst
+       light_arr(cnt,*) = lightspec
+       heavy_arr(cnt,*) = heavyspec
        
-       contour,alog(levst_arr(*,*)>1),xtr(*),lxE,/ylog,$
+       contour,alog(light_arr(*,*)+heavy_arr(*,*)>1),xtr(*),lxE,/ylog,$
                xtitle='x (Rp)',yrange=[24,100000],$
                xstyle=1,ytitle='Energy/q [eV/q]',/fill,nlev=50
        cnt = cnt+1
@@ -610,7 +609,7 @@ pro get_ave_v, beta_p, vp, vave
     print, vave
 end
 
-pro flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat
+pro flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat, mrat
 ; Arguments:
 ; Input:
 ;   traj: The trajectory {x:[..],y:[..]}
@@ -626,7 +625,8 @@ pro flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat
     for i=n_elements(xtr)-1,0,-1 do begin
         xcur = xtr(i)
         ycur = ytr(i)
-        particles = get_NH_local_particles(xp, xcur, ycur, zcur, radius, tags)
+        get_NH_local_particles, xp, xcur, ycur, zcur, radius, tags, mrat, lights, heavies
+        particles = [lights,heavies]
         if (n_elements(vp(particles,*)) eq 0) then break
         get_ave_v, beta_p(particles), vp(particles,*), vave
         vave = sqrt(vave(0)^2 + vave(1)^2 + vave(2)^2)
@@ -681,7 +681,6 @@ dir = args[0]
 stheta = float(args[1])
 sphi = float(args[2])
 spin = float(args[3])
-isHeavy = (args[4] eq "heavy")
 
 read_para,dir,p
 
@@ -701,7 +700,7 @@ loadct,39
 if(tag_exist(p,"part_nout")) then begin
     nfrm=p.nt/p.part_nout
 endif else begin
-    nfrm=p.nt/1000l
+    nfrm=20
 endelse
 
 xfile = dir+'c.xp_'+strtrim(string(procnum),2)
@@ -710,32 +709,41 @@ mratfile = dir+'c.mrat_'+strtrim(string(procnum),2)
 beta_p_file = dir+'c.beta_p_'+strtrim(string(procnum),2)
 tags_file = dir+'c.tags_'+strtrim(string(procnum),2)
 
-
 read_part,xfile,nfrm,p.Ni_max,xp
 read_part,vfile,nfrm,p.Ni_max,vp
 read_part_scalar,mratfile,nfrm,p.Ni_max,mrat
 read_part_scalar,beta_p_file,nfrm,p.Ni_max,beta_p
 read_part_scalar,tags_file,nfrm,p.Ni_max,tags
 
-build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:110.,y:-30.}, traj
-make_flyby_e_spectrogram, dir, p, traj, levst_arr, xp,vp,mrat,beta_p,eff,bins,levst,tags
-flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat
+build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:0.}, {point,x:150.,y:0.}, traj
+save, filename='traj.sav', traj
+make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, light_arr, heavy_arr
+
+;for i=nfrm-1, nfrm-5, -1 do begin
+;    read_part,xfile,i,p.Ni_max,xp
+;    read_part,vfile,i,p.Ni_max,vp
+;    read_part_scalar,mratfile,i,p.Ni_max,mrat
+;    read_part_scalar,beta_p_file,i,p.Ni_max,beta_p
+;    read_part_scalar,tags_file,i,p.Ni_max,tags
+;
+;    build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:150.,y:-30.}, traj
+;    save, filename='traj.sav', traj
+;    make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, next_light_arr, next_heavy_arr
+;    light_arr += next_light_arr
+;    heavy_arr += next_heavy_arr
+;endfor
 
 get_pluto_position, p, pluto_position
-xpl = reverse((traj.x - pluto_position)/p.RIo)
+xpos = reverse((traj.x - pluto_position)/p.RIo)
 
-save, filename='v.sav', vdat, xpl
-
-cnt_arr = levst_arr(*,*)
-xpos = xpl(*)
 readbins, ebins
 ebins = ebins.e_mid
+cnt_arr = light_arr + heavy_arr
 
-if (isHeavy) then begin
-    save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin)+" isHeavy="+string(isHeavy), filename='espec-'+args[5]+'-heavy.sav',cnt_arr,xpos,ebins
-endif else begin
-    save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin)+" isHeavy="+string(isHeavy), filename='espec-'+args[5]+'.sav',cnt_arr,xpos,ebins
-endelse
+save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin), filename='espec-'+args[4]+'.sav',light_arr,heavy_arr,cnt_arr,xpos,ebins
+
+flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat, mrat
+save, filename='v.sav', vdat, xpos
 
 
 end
