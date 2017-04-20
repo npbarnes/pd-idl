@@ -3,17 +3,17 @@ from scipy.integrate import ode
 
 class mom_trans:
 
-    def __init__(self, rp=None, nsw=None, mp=None, msw=None, mpu=None, vsw=None, B0=None, Ly=None, max_ndot=None, y=None):
-        self.rp = 1100. if rp is None else rp                     # Pluto radius
-        self.nsw = 0.0273*1e15 if nsw is None else nsw            # number density of the solar wind in km^-3
-        self.mp = 1.67e-27 if mp is None else mp                  # mass of a proton
-        self.msw = 1*self.mp if msw is  None else msw                  # Mass of average solar wind particle
-        self.mpu = 16*self.mp if mpu is None else mpu                  # Mass of average pick up ion
-        self.vsw = 400.0 if vsw is None else vsw                  # Solar wind speed
-        self.B0 = 0.3e-9 if B0 is None else B0                    # Ambient magnetic field in T
-        self.Ly = 2.0*self.rp if Ly is None else Ly                    # Field aligned extend of the cloud
-        self.max_ndot = 5e11 if max_ndot is None else max_ndot    # Peak number of ions per second picked up
-        self.y = 0 if y is None else y                            # Offset from the centerline
+    def __init__(self,  rp=1100, nsw=0.0273e15, mp=1.67e-27, msw=None, mpu=None, vsw=400, 
+                        B0=0.3e-9, Ly=None, max_ndot=5e11):
+        self.rp = rp
+        self.nsw = nsw
+        self.mp = mp
+        self.msw = msw if msw is not None else 1*self.mp               # Mass of average solar wind particle
+        self.mpu = mpu if mpu is not None else 16*self.mp              # Mass of average pick up ion
+        self.vsw = vsw                                                 # Solar wind speed
+        self.B0 = B0                                                   # Ambient magnetic field in T
+        self.Ly = Ly if Ly is not None else 2*self.rp                  # Field aligned extend of the cloud
+        self.max_ndot = max_ndot                                       # Peak number of ions per second picked up
 
         self.rho = self.msw*self.nsw
         self.vA = (self.B0/np.sqrt(np.pi*4e-7*self.rho/1e9))/1e3 # Alven speed in km/s
