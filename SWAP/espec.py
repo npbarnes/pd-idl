@@ -78,7 +78,7 @@ def makeespec(name):
 if __name__ == "__main__":
     fig, ax = makeespec(argv[1])
 
-    mtrans = mom_trans()
+    mtrans = mom_trans(B0=0.08e-9)
     mtrans.plot_energies(ax,
             [mtrans.mp, mtrans.mpu, 4*mtrans.mp], 
             [{'color':'blue'},{'color':'red'},{'color':'green'}])
