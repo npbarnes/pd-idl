@@ -27,7 +27,7 @@ class mom_trans:
         v = s[1]
         rho_pu = s[2]
 
-        r = np.sqrt(x**2 + self.y**2)
+        r = np.sqrt(x**2)
 
         return np.array([v,
                          ((self.vsw - v)*self.vA*self.rho/((self.rho+rho_pu)*self.Ly) 
