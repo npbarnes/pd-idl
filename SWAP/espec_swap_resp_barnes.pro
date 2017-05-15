@@ -715,6 +715,7 @@ read_part_scalar,mratfile,nfrm,p.Ni_max,mrat
 read_part_scalar,beta_p_file,nfrm,p.Ni_max,beta_p
 read_part_scalar,tags_file,nfrm,p.Ni_max,tags
 
+;build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:150.,y:-30.}, traj
 build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:0.}, {point,x:150.,y:0.}, traj
 save, filename='traj.sav', traj
 make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, light_arr, heavy_arr
@@ -726,8 +727,6 @@ make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, 
 ;    read_part_scalar,beta_p_file,i,p.Ni_max,beta_p
 ;    read_part_scalar,tags_file,i,p.Ni_max,tags
 ;
-;    build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:150.,y:-30.}, traj
-;    save, filename='traj.sav', traj
 ;    make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, next_light_arr, next_heavy_arr
 ;    light_arr += next_light_arr
 ;    heavy_arr += next_heavy_arr
