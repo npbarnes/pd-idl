@@ -464,7 +464,7 @@ pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
     xsz=1000
     ysz=1000
 
-    radius = 1000.0
+    radius = 2000.0
     dV = (4.0/3.0)*!DPI*radius^3
 
     count = 0l
@@ -573,7 +573,7 @@ pro make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff,bins, tag
     cnt = 0
 
     zcur = maxz/2
-    radius = 1000.0
+    radius = 2000.0
     for i = n_elements(xtr)-1,0,-1 do begin
        
        xcur=xtr(i)
@@ -621,7 +621,7 @@ pro flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat, mrat
     ytr = traj.y
     zcur = p.qz(-1)/2.
 
-    radius = 1000.
+    radius = 2000.
     vdat = []
     for i=n_elements(xtr)-1,0,-1 do begin
         xcur = xtr(i)
@@ -685,7 +685,7 @@ spin = float(args[3])
 
 read_para,dir,p
 
-procnum=12
+procnum=13
 
 file = 'vdist.mp4'
 width = 1100l
