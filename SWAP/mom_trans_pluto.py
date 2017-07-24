@@ -1,10 +1,10 @@
 import numpy as np
-from scipy.integrate import ode
+from scipy.integrate import ode,quad
 
 class mom_trans:
 
     def __init__(self,  rp=1100, nsw=0.0273e15, mp=1.67e-27, msw=None, mpu=None, vsw=400, 
-                        B0=0.3e-9, Ly=None, max_ndot=5e11):
+                        B0=0.3e-9, Ly=None, max_ndot=5e11,cap_r=None):
         self.rp = rp
         self.nsw = nsw
         self.mp = mp
@@ -14,12 +14,17 @@ class mom_trans:
         self.B0 = B0                                                   # Ambient magnetic field in T
         self.Ly = Ly if Ly is not None else 2*self.rp                  # Field aligned extend of the cloud
         self.max_ndot = max_ndot                                       # Peak number of ions per second picked up
+        self.cap_r = 1.05*self.rp
 
         self.rho = self.msw*self.nsw
         self.vA = (self.B0/np.sqrt(np.pi*4e-7*self.rho/1e9))/1e3 # Alven speed in km/s
 
     def rho_pu_dot(self, r):
         return self.mpu*self.max_ndot*np.exp(-r**2/(3*self.rp)**2)
+
+    def rho_pu_dot2(self, r):
+        r = max(r, self.cap_r)
+        return 1e-15*self.mpu*self.max_ndot*(1e15*(self.rp/r)**25 + 5e9*(self.rp/r)**8)
         
 
     def f(self, t, s):
