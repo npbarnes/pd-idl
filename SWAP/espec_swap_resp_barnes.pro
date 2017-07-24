@@ -249,29 +249,23 @@ end
 
 
 ;------------------------------------------------------------
-function get_swap_resp,vc,theta,phi,w,s4,eff
+function get_swap_resp,ee,theta,phi,w,s4,eff
 ;------------------------------------------------------------
+    ;Compute effective area
     aeff=0.033
     aeff=aeff/0.0882d
     dect_eff=eff
     aeff=dect_eff*aeff ;cm^2
     aeff = aeff/1e10   ;km^2
-    mp=1.67262158D-27
-    kb=1.380658D-23
-    e=1.6E-19 
-
-    ; Energy of particle in eV
-    ee=.5*mp/e*(vc*1000.)^2 ;vc in km/s...ee in eV
-    ;ee=300.
 
     ;Tansmission coef at angle phi
     wp=interpol(w.w, w.phi,phi)
 
-    ;get energy bin of ee
-    junk=min(abs(ee-s4.ecen),iee)
-
     ;get x bin from theta 
     junk=min(abs(theta-(-s4.x)),ix)
+
+    ;get energy bin of ee
+    junk=min(abs(ee-s4.ecen),iee)
 
     ;Energies represented within the bin
     er1=s4.y(iee,*)*ee
@@ -387,7 +381,7 @@ function rotZmat, alpha
 end
 
 ;----------------------------------------------------------------------
-pro get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
+pro get_instrument_look, v1, lphi, ltheta
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -408,19 +402,18 @@ pro get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
     ; convert direction of particle motion in pluto coords, vpp1, to direction of particle
     ; motion in SWAP coords
     ; first rotate +y to +x (this puts it in swap coords for orientation (theta=0,phi=0,spin=0)
-    vpp1_swap = rotZmat(-90.0*!DtoR)##transpose(vpp1) 
+    v1_swap = rotZmat(-90.0*!DtoR)##transpose(v1) 
     ; then apply rotations of the spacecraft in turn
-    vpp1_swap = rotZmat(sphi*!DtoR)##rotXmat(stheta*!DtoR)##rotYmat(spin*!DtoR)##vpp1_swap
+    v1_swap = rotZmat(sphi*!DtoR)##rotXmat(stheta*!DtoR)##rotYmat(spin*!DtoR)##v1_swap
 
 
     ; get the look direction
-    vpp1_swap_look = -vpp1_swap
+    v1_swap_look = -v1_swap
 
     ; get angles of the look direction
-    lphi = atan(vpp1_swap_look(0),vpp1_swap_look(1))*!radeg
-    ltheta = -atan(vpp1_swap_look(2),sqrt(vpp1_swap_look(0)^2 + vpp1_swap_look(1)^2))*!radeg
+    lphi = atan(v1_swap_look(0),v1_swap_look(1))*!radeg
+    ltheta = -atan(v1_swap_look(2),sqrt(v1_swap_look(0)^2 + v1_swap_look(1)^2))*!radeg
 
-    resp = get_swap_resp(vpp2,ltheta,lphi,wphi,s4,eff)
 
 
     return
@@ -451,6 +444,9 @@ pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
 ;   levst: The energy histogram of particle counts
     common fit_info,s4,wphi
 
+    mp = 1.6726215E-27 ; kg
+    e =  1.6021766E-19 ; C 
+
     vr = get_NH_vr()
 
     m1 = 1 ;hybrid simulation mass scaling
@@ -475,24 +471,29 @@ pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
     for l = 0ll,n_elements(particles)-1 do begin
 
       
-      vpp = reform(vp(particles(l),*))
-      vpp(0) = vpp(0)+vr
-      vpp2 = sqrt(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)
-      vpp1 = vpp/vpp2
+      ;particle velocity
+      v = reform(vp(particles(l),*))
+      ;add spacecraft velocity
+      v(0) = v(0)+vr
+      ;magnitude
+      vmag = sqrt(v(0)^2 + v(1)^2 + v(2)^2)
+      ;velocity direction unit vector
+      v1 = v/vmag
+      ;energy/charge in electron volts per fundamental charge
+      ;equivilent to joules per coulomb
+      ee=.5*((mp/e)/mrat(particles(l)))*(vmag*1000.)^2
       
-      get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
+      get_instrument_look,v1, lphi, ltheta
+      resp = get_swap_resp(ee,ltheta,lphi,wphi,s4,eff)
 
-      nv = vpp2/(dV*beta*beta_p(particles(l)))
+      nv = vmag/(dV*beta*beta_p(particles(l)))
 
       ; energy of each macro particle within volume
-      e_arr = [e_arr,(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)/mrat(particles(l))]
+      e_arr = [e_arr,ee]
       ; number of micro particles for each macro particle
       cnt_arr = [cnt_arr,nv*resp]
       
     endfor
-
-    ; Convert energy to eV
-    e_arr = 0.5*m1*1.67e-27*e_arr*1e6/1.6e-19
 
     ; build histogram of microparticle counts
     spectrum = fltarr(n_elements(bins))
