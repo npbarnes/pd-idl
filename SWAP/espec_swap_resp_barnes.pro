@@ -510,6 +510,7 @@ pro get_pluto_position, para, pluto_position
     if (tag_exist(para,"pluto_offset")) then begin
         pluto_position = para.qx(n_elements(para.qx)/2 + para.pluto_offset)
     endif else begin
+        print, "pluto offset assumed 30"
         pluto_position = para.qx(n_elements(para.qx)/2 + 30)
     endelse
 end
@@ -572,7 +573,7 @@ pro make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff,bins, tag
     cnt = 0
 
     zcur = maxz/2
-    radius = 2000.0
+    radius = 1000.0
     for i = n_elements(xtr)-1,0,-1 do begin
        
        xcur=xtr(i)
@@ -620,7 +621,7 @@ pro flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat, mrat
     ytr = traj.y
     zcur = p.qz(-1)/2.
 
-    radius = 2000.
+    radius = 1000.
     vdat = []
     for i=n_elements(xtr)-1,0,-1 do begin
         xcur = xtr(i)
@@ -700,8 +701,10 @@ loadct,39
 if(tag_exist(p,"part_nout")) then begin
     nfrm=p.nt/p.part_nout
 endif else begin
-    nfrm=20
+    print, "No part_nout: assuming 30 frames"
+    nfrm=30
 endelse
+nfrm=28
 
 xfile = dir+'c.xp_'+strtrim(string(procnum),2)
 vfile = dir+'c.vp_'+strtrim(string(procnum),2)
@@ -715,12 +718,12 @@ read_part_scalar,mratfile,nfrm,p.Ni_max,mrat
 read_part_scalar,beta_p_file,nfrm,p.Ni_max,beta_p
 read_part_scalar,tags_file,nfrm,p.Ni_max,tags
 
-;build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:150.,y:-30.}, traj
-build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:0.}, {point,x:150.,y:0.}, traj
+build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:158.,y:-30.}, traj
+;build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:0.}, {point,x:150.,y:0.}, traj
 save, filename='traj.sav', traj
 make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, light_arr, heavy_arr
 
-;for i=nfrm-1, nfrm-5, -1 do begin
+;for i=nfrm-1, nfrm-2, -1 do begin
 ;    read_part,xfile,i,p.Ni_max,xp
 ;    read_part,vfile,i,p.Ni_max,vp
 ;    read_part_scalar,mratfile,i,p.Ni_max,mrat
