@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     mtrans = mom_trans(B0=0.08e-9)
     mtrans.plot_energies(ax,
-            [mtrans.mp, mtrans.mpu, 4*mtrans.mp], 
+            [mtrans.mp, mtrans.mpu, 2*mtrans.mp], 
             [{'color':'blue'},{'color':'red'},{'color':'green'}])
 
     ax.set_title("Synthetic SWAP Energy Spectrogram")
