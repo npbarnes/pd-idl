@@ -249,14 +249,20 @@ end
 
 
 ;------------------------------------------------------------
-pro get_swap_resp, ee, theta, phi, w, s4, eff, resp
+function get_swap_resp,vc,theta,phi,w,s4,eff
 ;------------------------------------------------------------
-    ;Compute effective area
     aeff=0.033
     aeff=aeff/0.0882d
     dect_eff=eff
     aeff=dect_eff*aeff ;cm^2
     aeff = aeff/1e10   ;km^2
+    mp=1.67262158D-27
+    kb=1.380658D-23
+    e=1.6E-19 
+
+    ; Energy of particle in eV
+    ee=.5*mp/e*(vc*1000.)^2 ;vc in km/s...ee in eV
+    ;ee=300.
 
     ;Tansmission coef at angle phi
     wp=interpol(w.w, w.phi,phi)
@@ -267,19 +273,20 @@ pro get_swap_resp, ee, theta, phi, w, s4, eff, resp
     ;get x bin from theta 
     junk=min(abs(theta-(-s4.x)),ix)
 
-    ;Transmission for this theta within the energy bin
-    tt=s4.arr(*,ix,iee)
-
     ;Energies represented within the bin
     er1=s4.y(iee,*)*ee
+
+    ;Transmission for this theta within the energy bin
+    tt=s4.arr(*,ix,iee)
 
     ;Tansmission for this theta with that energy
     ttnew=interpol(tt,er1, ee)
     if (ee lt min(er1) or ee gt max(er1)) then ttnew = 0.0d
 
     ;SWAP response (transmission as a function of phi)*(transmission as a function of E and theta)*(effective area)
-    resp = wp*ttnew*aeff
+    res = wp*ttnew*aeff
 
+    return,res
 end
 ;------------------------------------------------------------
 
@@ -380,7 +387,7 @@ function rotZmat, alpha
 end
 
 ;----------------------------------------------------------------------
-pro get_instrument_look, vpp1, lphi, ltheta
+pro get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -413,6 +420,10 @@ pro get_instrument_look, vpp1, lphi, ltheta
     lphi = atan(vpp1_swap_look(0),vpp1_swap_look(1))*!radeg
     ltheta = -atan(vpp1_swap_look(2),sqrt(vpp1_swap_look(0)^2 + vpp1_swap_look(1)^2))*!radeg
 
+    resp = get_swap_resp(vpp2,ltheta,lphi,wphi,s4,eff)
+
+
+    return
 end
 ;----------------------------------------------------------------------
 
@@ -443,8 +454,6 @@ pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
     vr = get_NH_vr()
 
     m1 = 1 ;hybrid simulation mass scaling
-    mp = 1.6726219e-27
-    e =  1.6021766e-19
      
     dE = 1.0
     hmin = 1.0
@@ -466,29 +475,24 @@ pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
     for l = 0ll,n_elements(particles)-1 do begin
 
       
-      ;velocity vector
-      v = reform(vp(particles(l),*))
-      ;add spacecraft velocity
-      v(0) = v(0)+vr
-      ;velocity magnetude
-      vmag = sqrt(v(0)^2 + v(1)^2 + v(2)^2)
-      ;velocity direction unit vector
-      v1 = v/vmag
-      ;E/Q in eV/q
-      ee=.5*mp*e*(vmag*1000.)^2/mrat(particles(l))
+      vpp = reform(vp(particles(l),*))
+      vpp(0) = vpp(0)+vr
+      vpp2 = sqrt(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)
+      vpp1 = vpp/vpp2
       
-      get_instrument_look, v1, ltheta, lphi
+      get_instrument_look,vpp1,vpp2,resp,s4,wphi,eff
 
-      get_swap_resp, ee, ltheta, lphi, wphi, s4, eff, resp
-
-      nv = vmag/(dV*beta*beta_p(particles(l)))
+      nv = vpp2/(dV*beta*beta_p(particles(l)))
 
       ; energy of each macro particle within volume
-      e_arr = [e_arr,ee]
+      e_arr = [e_arr,(vpp(0)^2 + vpp(1)^2 + vpp(2)^2)/mrat(particles(l))]
       ; number of micro particles for each macro particle
       cnt_arr = [cnt_arr,nv*resp]
       
     endfor
+
+    ; Convert energy to eV
+    e_arr = 0.5*m1*1.67e-27*e_arr*1e6/1.6e-19
 
     ; build histogram of microparticle counts
     spectrum = fltarr(n_elements(bins))
