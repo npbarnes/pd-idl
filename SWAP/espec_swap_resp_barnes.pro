@@ -420,13 +420,19 @@ pro get_instrument_look, v1, lphi, ltheta
 end
 ;----------------------------------------------------------------------
 
-pro get_NH_local_particles, xp, x, y, z, radius, tags, mrat, lights, heavies
-    lights = where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
-               (mrat(*) gt 0.1) and $
-               (tags(*) ge 1.0), /null)
-    heavies = where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
-               (mrat(*) le 0.1) and $
-               (tags(*) ge 1.0), /null)
+pro get_NH_local_particles, xp, x, y, z, radius, tags, mrat, species, weights
+    hydrogen = where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
+               (mrat(*) eq 1.0) and $
+               (tags(*) ne 0.0), /null)
+    helium = where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
+               (mrat(*) eq 0.5) and $
+               (tags(*) ne 0.0), /null)
+    methane = where((sqrt( (xp(*,0)-x)^2 + (xp(*,1)-y)^2 + (xp(*,2)-z)^2 ) le radius) and $
+               (mrat(*) eq 1.0/16.0) and $
+               (tags(*) ne 0.0), /null)
+
+    species = List(hydrogen, helium, methane)
+    weights = [1.0, 2.0, 1.0]
 end
 
 ;----------------------------------------------------------------------
@@ -541,7 +547,7 @@ pro build_flyby_trajectory, para, n, p0, p1, traj
     traj = {x:xtr, y:ytr}
 end
 
-pro make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff,bins, tags, light_arr, heavy_arr
+pro make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff,bins, tags, spectrograms_by_species
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -568,8 +574,7 @@ pro make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff,bins, tag
     ; We now have the bin values
     lxE = bins.e_mid
 
-    light_arr = fltarr(n_elements(xtr),n_elements(bins))
-    heavy_arr = fltarr(n_elements(xtr),n_elements(bins))
+    spectrograms_by_species = fltarr(3,n_elements(xtr),n_elements(bins))
 
     cnt = 0
 
@@ -581,15 +586,15 @@ pro make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff,bins, tag
        ycur=ytr(i)
        
        !p.multi=[0,1,1]
-       get_NH_local_particles, xp, xcur, ycur, zcur, radius, tags, mrat, lights, heavies
+       get_NH_local_particles, xp, xcur, ycur, zcur, radius, tags, mrat, species, weights
 
-       make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p,p.beta,eff,bins,tags,lights,lightspec
-       make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p,p.beta,eff,bins,tags,heavies,heavyspec
+       for j=0, 2 do begin
+           make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p,p.beta,eff,bins,tags,species(j),spec
+           spectrograms_by_species(j,cnt,*) = spec*weights(j)
+       endfor
+
        
-       light_arr(cnt,*) = lightspec
-       heavy_arr(cnt,*) = heavyspec
-       
-       contour,alog(light_arr(*,*)+heavy_arr(*,*)>1),xtr(*),lxE,/ylog,$
+       contour,alog(total(spectrograms_by_species, 1)>1),xtr(*),lxE,/ylog,$
                xtitle='x (Rp)',yrange=[24,100000],$
                xstyle=1,ytitle='Energy/q [eV/q]',/fill,nlev=50
        cnt = cnt+1
@@ -705,7 +710,7 @@ endif else begin
     print, "No part_nout: assuming 30 frames"
     nfrm=30
 endelse
-nfrm=28
+nfrm=20
 
 xfile = dir+'c.xp_'+strtrim(string(procnum),2)
 vfile = dir+'c.vp_'+strtrim(string(procnum),2)
@@ -722,8 +727,9 @@ read_part_scalar,tags_file,nfrm,p.Ni_max,tags
 build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:158.,y:-30.}, traj
 ;build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:0.}, {point,x:150.,y:0.}, traj
 save, filename='traj.sav', traj
-make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, light_arr, heavy_arr
+make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, spectrograms_by_species
 
+;count = 1
 ;for i=nfrm-1, nfrm-2, -1 do begin
 ;    read_part,xfile,i,p.Ni_max,xp
 ;    read_part,vfile,i,p.Ni_max,vp
@@ -731,22 +737,23 @@ make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, 
 ;    read_part_scalar,beta_p_file,i,p.Ni_max,beta_p
 ;    read_part_scalar,tags_file,i,p.Ni_max,tags
 ;
-;    make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, next_light_arr, next_heavy_arr
-;    light_arr += next_light_arr
-;    heavy_arr += next_heavy_arr
+;    make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, new_sp_by_sp
+;    spectrograms_by_species += new_sp_by_sp
+;    count += 1
 ;endfor
+;spectrograms_by_species = spectrograms_by_species/count
+
 
 get_pluto_position, p, pluto_position
 xpos = reverse((traj.x - pluto_position)/p.RIo)
 
 readbins, ebins
 ebins = ebins.e_mid
-cnt_arr = light_arr + heavy_arr
 
-save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin), filename='espec-'+args[4]+'.sav',light_arr,heavy_arr,cnt_arr,xpos,ebins
+save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin), filename='espec-'+args[4]+'.sav',spectrograms_by_species,xpos,ebins
 
-flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat, mrat
-save, filename='v.sav', vdat, xpos
+;flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat, mrat
+;save, filename='v.sav', vdat, xpos
 
 
 end
