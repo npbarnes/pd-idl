@@ -5,6 +5,7 @@ from matplotlib import rcParams
 from scipy.io import readsav
 from sys import argv
 from numpy.ma import masked_array
+from numpy import logical_and
 from mom_trans_pluto import mom_trans
 
 def _espec_v1(data):
@@ -67,21 +68,64 @@ def _espec_v2(data, identify=None):
 
     return f, ax
 
-def makeespec(name):
+def _espec_v3(data, options=None):
+    if options is None:
+        options= {'colorbars':['Blues','Greens','Reds']}
+    x = data['xpos']
+    ebins = data['ebins']
+    spectrograms_by_species = data['spectrograms_by_species']
+
+    H = spectrograms_by_species[:,:,0]
+    He = spectrograms_by_species[:,:,1]
+    CH4 = spectrograms_by_species[:,:,2]
+
+    cnt_arr = H+He+CH4
+
+    mH = masked_array(cnt_arr, mask=(~logical_and(H>He,H>CH4)))
+    mHe = masked_array(cnt_arr, mask=(~logical_and(He>H,He>CH4)))
+    mCH4 = masked_array(cnt_arr, mask=~(CH4>0))
+
+    f = plt.gcf()
+    ax = plt.gca()
+
+    norm = LogNorm()
+
+    Hhist = ax.pcolormesh(x, ebins, mH, norm=norm, cmap=options['colorbars'][0])
+    Hcb = plt.colorbar(Hhist, fraction=0.075, pad=-0.035, shrink=0.75)
+    Hcb.ax.minorticks_on()
+
+    Hehist = ax.pcolormesh(x, ebins, mHe, norm=norm, cmap=options['colorbars'][1])
+    Hecb = plt.colorbar(Hehist, fraction=0.075, pad=-0.033, shrink=0.75, format="")
+
+    CH4hist = ax.pcolormesh(x, ebins, mCH4, norm=norm, cmap=options['colorbars'][2])
+    CH4cb = plt.colorbar(CH4hist, fraction=0.075, pad=0.025, shrink=0.75, format="")
+
+    Hecb.ax.set_title('COIN (Hz)', fontdict={'fontsize':'small'})
+    ax.set_yscale('log')
+    ax.set_ylabel('Energy per charge ($eV/q$)')
+    ax.set_xlabel('X position ($R_p$)')
+    ax.invert_xaxis()
+
+    return f, ax
+
+def makeespec(name, options=None):
     data = readsav(name+".sav")
     try:
-        return _espec_v2(data, identify=_ident_any)
-    except IndexError:
-        print("Reading version 2 failed. Falling back on version 1.")
-        return _espec_v1(data)
+        return _espec_v3(data, options)
+    except KeyError:
+        try:
+            return _espec_v2(data, identify=_ident_any)
+        except IndexError:
+            print("Reading version 2 failed. Falling back on version 1.")
+            return _espec_v1(data)
 
 if __name__ == "__main__":
-    fig, ax = makeespec(argv[1])
+    fig, ax = makeespec(argv[1], {'colorbars':['Blues','Blues','Reds']})
 
-    mtrans = mom_trans(B0=0.08e-9)
-    mtrans.plot_energies(ax,
-            [mtrans.mp, mtrans.mpu, 2*mtrans.mp], 
-            [{'color':'blue'},{'color':'red'},{'color':'green'}])
+    #mtrans = mom_trans(B0=0.3e-9)
+    #mtrans.plot_energies(ax,
+    #        [mtrans.mp, mtrans.mpu, 2*mtrans.mp], 
+    #        [{'color':'blue'},{'color':'red'},{'color':'green'}])
 
     ax.set_title("Synthetic SWAP Energy Spectrogram")
 
