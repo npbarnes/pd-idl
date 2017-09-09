@@ -512,7 +512,7 @@ stheta = float(args[1])
 sphi = float(args[2])
 spin = float(args[3])
 
-read_para,dir,p
+read_para,file_dirname(dir),p
 
 procnum=13
 
