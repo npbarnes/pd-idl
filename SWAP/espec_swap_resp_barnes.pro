@@ -493,7 +493,7 @@ dir = args[0]
 
 read_para,file_dirname(dir),p
 
-procnum=13
+procnum=ceil(float(p.num_proc)/2.0)
 
 file = 'vdist.mp4'
 width = 1100l
