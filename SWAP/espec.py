@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib import rcParams
@@ -8,6 +8,8 @@ from numpy.ma import masked_array
 from numpy import logical_and
 from mom_trans_pluto import mom_trans
 import numpy as np
+import spiceypy as sp
+import NH_tools
 
 def _espec_v1(data):
     x = data['xpos']
@@ -134,21 +136,30 @@ def _espec_v4(data, options=None):
 
     norm = LogNorm()
 
-    Hhist = ax.pcolormesh(x, ebins, mH, norm=norm, cmap=options['colorbars'][0])
+    Hhist = ax.pcolormesh(t, ebins, mH, norm=norm, cmap=options['colorbars'][0])
     Hcb = plt.colorbar(Hhist, fraction=0.075, pad=-0.035, shrink=0.75)
     Hcb.ax.minorticks_on()
 
-    Hehist = ax.pcolormesh(x, ebins, mHe, norm=norm, cmap=options['colorbars'][1])
+    Hehist = ax.pcolormesh(t, ebins, mHe, norm=norm, cmap=options['colorbars'][1])
     Hecb = plt.colorbar(Hehist, fraction=0.075, pad=-0.033, shrink=0.75, format="")
 
-    CH4hist = ax.pcolormesh(x, ebins, mCH4, norm=norm, cmap=options['colorbars'][2])
+    CH4hist = ax.pcolormesh(t, ebins, mCH4, norm=norm, cmap=options['colorbars'][2])
     CH4cb = plt.colorbar(CH4hist, fraction=0.075, pad=0.025, shrink=0.75, format="")
 
+
+    ax.set_title("Synthetic SWAP Energy Spectrogram", y=1.11)
     Hecb.ax.set_title('COIN (Hz)', fontdict={'fontsize':'small'})
     ax.set_yscale('log')
     ax.set_ylabel('Energy per charge ($eV/q$)')
-    ax.set_xlabel('X position ($R_p$)')
-    ax.invert_xaxis()
+    ax.set_xlabel('Time (UTC)')
+
+    ax.set_xticklabels([sp.timout(et, 'HR:MN:SC') for et in ax.get_xticks()], rotation=30)
+
+    ax2 = ax.twiny()
+    ax2.set_xlabel('X ($R_p$)')
+    ax2.set_xlim(*ax.get_xlim())
+    ax2.set_xticks(ax.get_xticks())
+    ax2.set_xticklabels(['{0:.2f}'.format(NH_tools.pos_at_time(et)/1187) for et in ax.get_xticks()], y=1.01)
 
     return f, ax
 
@@ -170,14 +181,13 @@ def makeespec(name, options=None):
                 return _espec_v1(data)
 
 if __name__ == "__main__":
-    fig, ax = makeespec(argv[1], {'colorbars':['Blues','Blues','Reds']})
+    fig, ax = makeespec(argv[1], {'colorbars':['Blues','Greens','Reds']})
 
     #mtrans = mom_trans(B0=0.3e-9)
     #mtrans.plot_energies(ax,
     #        [mtrans.mp, mtrans.mpu, 2*mtrans.mp], 
     #        [{'color':'blue'},{'color':'red'},{'color':'green'}])
 
-    ax.set_title("Synthetic SWAP Energy Spectrogram")
 
-    fig.savefig(argv[1]+".png", format='png',bbox_inches='tight')
+    fig.savefig(argv[1]+".png", format='png', bbox_inches='tight')
     fig.clear()
