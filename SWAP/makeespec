@@ -1,1 +1,1 @@
-idl -e "@batchespec" -args "$@" && ./espec.py "espec-$5"
+idl -e "@batchespec" -args "$@" && ./espec.py "espec-$2"

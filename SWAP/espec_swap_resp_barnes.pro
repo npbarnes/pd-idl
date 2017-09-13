@@ -204,7 +204,7 @@ function rotZmat, alpha
 end
 
 ;----------------------------------------------------------------------
-pro get_instrument_look, v1, lphi, ltheta
+pro get_instrument_look, orientation, v1, lphi, ltheta
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -220,7 +220,10 @@ pro get_instrument_look, v1, lphi, ltheta
 ; Who knows:
 ;   s4
     ; spacecraft orientation (i.e. sunward direction)
-    common orientation, stheta, sphi, spin
+
+    stheta = orientation[0]
+    sphi = orientation[1]
+    spin = orientation[2]
 
     ; convert direction of particle motion in pluto coords, vpp1, to direction of particle
     ; motion in SWAP coords
@@ -260,7 +263,7 @@ end
 
 ;----------------------------------------------------------------------
 pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
-               beta,eff,bins,tags,particles,spectrum
+               beta,eff,bins,tags,particles,spectrum, orientation
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -312,7 +315,7 @@ pro make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p, $
       ;equivilent to joules per coulomb
       ee=.5*((mp/e)/mrat(particles(l)))*(vmag*1000.)^2
       
-      get_instrument_look,v1, lphi, ltheta
+      get_instrument_look, orientation, v1, lphi, ltheta
       resp = get_swap_resp(ee,ltheta,lphi,wphi,s4,eff)
 
       nv = vmag/(dV*beta*beta_p(particles(l)))
@@ -345,15 +348,7 @@ pro get_pluto_position, para, pluto_position
     endelse
 end
 
-pro build_flyby_trajectory, para, n, p0, p1, traj 
-;----------------------------------------------------------------------
-; Arguments:
-; Input:
-;   para: parameter structure
-;   p0,p1: points, {x:*,y:*}, along NH trajectory
-;   n: number of points along the trajectory
-; Output:
-;   traj: output trajectory points {x:[..],y[..]}
+function y_from_x, x, para, p0, p1
 
     rpl = para.RIo
 
@@ -363,14 +358,14 @@ pro build_flyby_trajectory, para, n, p0, p1, traj
 
     slp =  (p1.y-p0.y)/(p1.x-p0.x)
 
-    xtr = findgen(n)*maxx/n
     get_pluto_position, para, pluto_position
-    ytr = -slp*(xtr - pluto_position) + p0.y*rpl + maxy/2
+    y = -slp*(x - pluto_position) + p0.y*rpl + maxy/2
 
-    traj = {x:xtr, y:ytr}
+    return, y
 end
 
-pro make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff,bins, tags, spectrograms_by_species
+pro make_flyby_e_spectrograms, dir, p, t1, t2, xp, vp, mrat, beta_p, eff, bins, tags,$
+    spectrograms_by_species, times, positions, orientations
 ;----------------------------------------------------------------------
 ; ARGUMENTS:
 ; Input:
@@ -380,11 +375,12 @@ pro make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff,bins, tag
 ; Output:
 ;   levst_arr: Synthetic energy spectrogram
 
+    common python_interpreter, NH_tools
     ; radius of pluto
     rpl = 1187.
 
-    xtr = traj.x
-    ytr = traj.y
+    delta_t = 60.0D
+    num_spectra = floor((t2-t1)/delta_t) + 1
 
     maxx = p.qx(-1)
     maxy = p.qy(-1)
@@ -397,33 +393,45 @@ pro make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff,bins, tag
     ; We now have the bin values
     lxE = bins.e_mid
 
-    spectrograms_by_species = fltarr(3,n_elements(xtr),n_elements(bins))
+    spectrograms_by_species = fltarr(3,num_spectra,n_elements(bins))
 
     cnt = 0
 
-    zcur = maxz/2
+    zcur = maxz/2.0
     radius = 2000.0
-    for i = n_elements(xtr)-1,0,-1 do begin
+    get_pluto_position, p, pluto_position
+
+
+    i = 0
+    times = dblarr(num_spectra)
+    positions = dblarr(num_spectra,3)
+    orientations = dblarr(num_spectra, 3)
+    for t = t1, t2, delta_t do begin
+
        
-       xcur=xtr(i)
-       ycur=ytr(i)
+       xcur = NH_tools.pos_at_time(t) + pluto_position
+       ycur=y_from_x(xcur, p, {point, x:0.,y:12.}, {point, x:158., y:-30.})
+       print, "Progress: ", (1 - (t2-t)/(t2-t1))*100, "%", xcur, ycur
+       o = NH_tools.orientation_at_time(t)
        
-       !p.multi=[0,1,1]
+       times[i] = t
+       positions[i,0] = xcur
+       positions[i,1] = ycur
+       positions[i,2] = zcur
+       orientations[i,0] = o[0]
+       orientations[i,1] = o[1]
+       orientations[i,2] = o[2]
+
        get_NH_local_particles, xp, xcur, ycur, zcur, radius, tags, mrat, species, weights
 
        for j=0, 2 do begin
-           make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p,p.beta,eff,bins,tags,species(j),spec
-           spectrograms_by_species(j,cnt,*) = spec*weights(j)
+           make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p,p.beta,eff,bins,tags,species(j),spec,o
+           spectrograms_by_species(j,i,*) = spec*weights(j)
        endfor
 
-       
-       contour,alog(total(spectrograms_by_species, 1)>1),xtr(*),lxE,/ylog,$
-               xtitle='x (Rp)',yrange=[24,100000],$
-               xstyle=1,ytitle='Energy/q [eV/q]',/fill,nlev=50
-       cnt = cnt+1
-
-
+       i = i+1
     endfor
+    print, "Progress: 100%"
 end
 
 pro get_ave_v, beta_p, vp, vave
@@ -469,7 +477,11 @@ end
 
 common fit_info,s4,wphi
 common NH_traj_info,traj_data,time_traj,it_str,file_path,traj_met
-common orientation, stheta, sphi, spin
+common python_interpreter, NH_tools
+
+NH_tools = Python.Import('NH_tools')
+t1 = NH_tools.close_start
+t2 = NH_tools.close_end
 
 
 restore,'fin_arr_ebea_ang_eb_bg_corr.sav'
@@ -508,9 +520,6 @@ eff = get_dect_eff()
 
 args = COMMAND_LINE_ARGS()
 dir = args[0]
-stheta = float(args[1])
-sphi = float(args[2])
-spin = float(args[3])
 
 read_para,file_dirname(dir),p
 
@@ -547,10 +556,8 @@ read_part_scalar,mratfile,nfrm,p.Ni_max,mrat
 read_part_scalar,beta_p_file,nfrm,p.Ni_max,beta_p
 read_part_scalar,tags_file,nfrm,p.Ni_max,tags
 
-build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:12.}, {point,x:158.,y:-30.}, traj
-;build_flyby_trajectory, p, p.nx/2, {point,x:0.,y:0.}, {point,x:150.,y:0.}, traj
-save, filename='traj.sav', traj
-make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, spectrograms_by_species
+make_flyby_e_spectrograms, dir, p, t1, t2, xp, vp, mrat, beta_p, eff, bins, tags,$
+                           spectrograms_by_species, times, positions, orientations
 
 ;count = 1
 ;for i=nfrm-1, nfrm-2, -1 do begin
@@ -567,13 +574,10 @@ make_flyby_e_spectrograms, dir, p, traj, xp, vp, mrat, beta_p, eff, bins, tags, 
 ;spectrograms_by_species = spectrograms_by_species/count
 
 
-get_pluto_position, p, pluto_position
-xpos = reverse((traj.x - pluto_position)/p.RIo)
-
 readbins, ebins
 ebins = ebins.e_mid
 
-save, description=dir+" "+string(stheta)+" "+string(sphi)+" "+string(spin), filename='espec-'+args[4]+'.sav',spectrograms_by_species,xpos,ebins
+save, description=dir, filename='espec-'+args[1]+'.sav',spectrograms_by_species,times,positions,orientations,ebins
 
 ;flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat, mrat
 ;save, filename='v.sav', vdat, xpos
