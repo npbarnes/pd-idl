@@ -67,10 +67,6 @@ PRO read_part_scalar,ffile,nfrm,Ni_max,xp
 end
 ;----------------------------------------------------------------
 
-
-
-
-
 ;------------------------------------------------------------
 function get_swap_resp,ee,theta,phi,w,s4,eff
 ;------------------------------------------------------------
@@ -231,7 +227,6 @@ pro get_instrument_look, orientation, v1, lphi, ltheta
     v1_swap = rotZmat(-90.0*!DtoR)##transpose(v1) 
     ; then apply rotations of the spacecraft in turn
     v1_swap = rotZmat(sphi*!DtoR)##rotXmat(stheta*!DtoR)##rotYmat(spin*!DtoR)##v1_swap
-
 
     ; get the look direction
     v1_swap_look = -v1_swap
@@ -447,30 +442,6 @@ pro get_ave_v, beta_p, vp, vave
     print, vave
 end
 
-pro flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat, mrat
-; Arguments:
-; Input:
-;   traj: The trajectory {x:[..],y:[..]}
-;   xp,vp,tags: Hybrid output
-; Output:
-;   vdat: velocity data
-    xtr = traj.x
-    ytr = traj.y
-    zcur = p.qz(-1)/2.
-
-    radius = 2000.
-    vdat = []
-    for i=n_elements(xtr)-1,0,-1 do begin
-        xcur = xtr(i)
-        ycur = ytr(i)
-        get_NH_local_particles, xp, xcur, ycur, zcur, radius, tags, mrat, lights, heavies
-        particles = [lights,heavies]
-        if (n_elements(vp(particles,*)) eq 0) then break
-        get_ave_v, beta_p(particles), vp(particles,*), vave
-        vave = sqrt(vave(0)^2 + vave(1)^2 + vave(2)^2)
-        vdat = [vdat,vave]
-    endfor
-end
 ;----------------------------------------------------------------------
 ;main program
 ;----------------------------------------------------------------------
@@ -516,7 +487,6 @@ i_et=double(interpol(traj_met, time_traj.tyrr, it_str.tyrr))
 
 eff = get_dect_eff()
 
-!p.multi=[0,1,1]
 
 args = COMMAND_LINE_ARGS()
 dir = args[0]
@@ -578,10 +548,6 @@ readbins, ebins
 ebins = ebins.e_mid
 
 save, description=dir, filename='espec-'+args[1]+'.sav',spectrograms_by_species,times,positions,orientations,ebins
-
-;flyby_flow_velocity, p, traj, xp, vp, beta_p, tags, vdat, mrat
-;save, filename='v.sav', vdat, xpos
-
 
 end
 ;----------------------------------------------------------------------
