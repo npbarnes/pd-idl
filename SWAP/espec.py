@@ -115,53 +115,79 @@ def _espec_v4(data, options=None):
     if options is None:
         options= {'colorbars':['Blues','Greens','Reds']}
 
+    # Load data from IDL
     spectrograms_by_species = data['spectrograms_by_species']
     t = data['times']
     x = data['positions'][0,:]/1187
     o = data['orientations']
     ebins = data['ebins']
 
+    # Separate parts
     H = spectrograms_by_species[:,:,0]
     He = spectrograms_by_species[:,:,1]
     CH4 = spectrograms_by_species[:,:,2]
 
     cnt_arr = H+He+CH4
 
+    # Build masked arrays for plotting the dominant species
     mH = masked_array(cnt_arr, mask=(~logical_and(H>He,H>CH4)))
     mHe = masked_array(cnt_arr, mask=(~logical_and(He>H,He>CH4)))
-    mCH4 = masked_array(cnt_arr, mask=~(CH4>0))
+    mCH4 = masked_array(cnt_arr, mask=~logical_and(CH4>H,CH4>He))
+    
+    # Setup subplot and colorbar axes
+    fig, (ax_spec, ax_theta, ax_phi, ax_spin) = plt.subplots(4, sharex=True)
+    fig.subplots_adjust(right=0.8)
+    fig.subplots_adjust(hspace=0.05)
 
-    f = plt.gcf()
-    ax = plt.gca()
+    spec_pos = ax_spec.get_position()
+    cbar_CH4 = fig.add_axes([spec_pos.x1+.01, spec_pos.y0+.01, 0.1/3, spec_pos.height-.02])
+    cbar_CH4_pos = cbar_CH4.get_position()
+    cbar_He = fig.add_axes([cbar_CH4_pos.x1, spec_pos.y0+.01, 0.1/3, spec_pos.height-.02])
+    cbar_He_pos = cbar_He.get_position()
+    cbar_H = fig.add_axes([cbar_He_pos.x1, spec_pos.y0+.01, 0.1/3,spec_pos.height-.02])
 
-    norm = LogNorm()
-
-    Hhist = ax.pcolormesh(t, ebins, mH, norm=norm, cmap=options['colorbars'][0])
-    Hcb = plt.colorbar(Hhist, fraction=0.075, pad=-0.035, shrink=0.75)
+    # Plot spectrograms and make colorbars
+    Hhist = ax_spec.pcolormesh(t, ebins, mH, norm=LogNorm(), cmap=options['colorbars'][0],
+            vmin=1e-3, vmax=1e4)
+    Hcb = fig.colorbar(Hhist, cax=cbar_H)
     Hcb.ax.minorticks_on()
 
-    Hehist = ax.pcolormesh(t, ebins, mHe, norm=norm, cmap=options['colorbars'][1])
-    Hecb = plt.colorbar(Hehist, fraction=0.075, pad=-0.033, shrink=0.75, format="")
+    Hehist = ax_spec.pcolormesh(t, ebins, mHe, norm=LogNorm(), cmap=options['colorbars'][1],
+            vmin=1e-3, vmax=1e4)
+    Hecb = fig.colorbar(Hehist, cax=cbar_He, format="")
 
-    CH4hist = ax.pcolormesh(t, ebins, mCH4, norm=norm, cmap=options['colorbars'][2])
-    CH4cb = plt.colorbar(CH4hist, fraction=0.075, pad=0.025, shrink=0.75, format="")
+    CH4hist = ax_spec.pcolormesh(t, ebins, mCH4, norm=LogNorm(), cmap=options['colorbars'][2],
+            vmin=1e-3, vmax=1e4)
+    CH4cb = fig.colorbar(CH4hist, cax=cbar_CH4, format="")
 
+    # Plot orientations
+    ax_theta.plot(t, o[0], marker='o', markersize=1.3, linewidth=.1, color='black')
+    ax_theta.set_ylim(-180,180)
+    ax_phi.plot(t, o[1], marker='o', markersize=1.3, linewidth=.1, color='black')
+    ax_phi.set_ylim(-180,180)
+    ax_spin.plot(t, o[2], marker='o', markersize=1.3, linewidth=.1, color='black')
+    ax_spin.set_ylim(-180,180)
 
-    ax.set_title("Synthetic SWAP Energy Spectrogram", y=1.11)
+    # Set title, labels and adjust figure
+    ax_spec.set_title("Synthetic SWAP Energy Spectrogram", y=1.4)
     Hecb.ax.set_title('COIN (Hz)', fontdict={'fontsize':'small'})
-    ax.set_yscale('log')
-    ax.set_ylabel('Energy per charge ($eV/q$)')
-    ax.set_xlabel('Time (UTC)')
+    ax_spec.set_yscale('log')
+    ax_spec.set_ylabel('Energy/Q ($eV/q$)')
+    ax_theta.set_ylabel('Sun Theta\nAngle (deg)')
+    ax_phi.set_ylabel('Sun Phi\nAngle (deg)')
+    ax_spin.set_ylabel('Spin\nAngle (deg)')
+    ax_spin.set_xlabel('Time (UTC)')
 
-    ax.set_xticklabels([sp.timout(et, 'HR:MN:SC') for et in ax.get_xticks()], rotation=30)
+    ax_spin.set_xticklabels([sp.timout(et, 'HR:MN:SC') for et in ax_spec.get_xticks()], rotation=-20, horizontalalignment='left')
 
-    ax2 = ax.twiny()
-    ax2.set_xlabel('X ($R_p$)')
-    ax2.set_xlim(*ax.get_xlim())
-    ax2.set_xticks(ax.get_xticks())
-    ax2.set_xticklabels(['{0:.2f}'.format(NH_tools.pos_at_time(et)/1187) for et in ax.get_xticks()], y=1.01)
+    ax_twin = ax_spec.twiny()
+    ax_twin.set_xlabel('X ($R_p$)')
+    ax_twin.set_xlim(*ax_spec.get_xlim())
+    ax_twin.set_xticks(ax_spec.get_xticks())
+    ax_twin.set_xticklabels(['{0:.2f}'.format(NH_tools.pos_at_time(et)/1187) for et in ax_spec.get_xticks()], y=1.05)
 
-    return f, ax
+    # This breaks the convention of previous versions
+    return fig, None
 
 
 def makeespec(name, options=None):
