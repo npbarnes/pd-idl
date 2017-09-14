@@ -161,11 +161,12 @@ def _espec_v4(data, options=None):
     CH4cb = fig.colorbar(CH4hist, cax=cbar_CH4, format="")
 
     # Plot orientations
-    ax_theta.plot(t, o[0], marker='o', markersize=1.3, linewidth=.1, color='black')
+    ax_theta.plot(t, o[0], marker='o', markersize=1.3, linestyle='None', color='black')
+    ax_phi.plot(t,   o[1], marker='o', markersize=1.3, linestyle='None', color='black')
+    ax_spin.plot(t,  o[2], marker='o', markersize=1.3, linestyle='None', color='black')
+
     ax_theta.set_ylim(-180,180)
-    ax_phi.plot(t, o[1], marker='o', markersize=1.3, linewidth=.1, color='black')
     ax_phi.set_ylim(-180,180)
-    ax_spin.plot(t, o[2], marker='o', markersize=1.3, linewidth=.1, color='black')
     ax_spin.set_ylim(-180,180)
 
     # Set title, labels and adjust figure
