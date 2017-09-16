@@ -353,8 +353,7 @@ function y_from_x, x, para, p0, p1
 
     slp =  (p1.y-p0.y)/(p1.x-p0.x)
 
-    get_pluto_position, para, pluto_position
-    y = -slp*(x - pluto_position) + p0.y*rpl + maxy/2
+    y = -slp*x + p0.y*rpl + maxy/2
 
     return, y
 end
@@ -404,7 +403,7 @@ pro make_flyby_e_spectrograms, dir, p, t1, t2, xp, vp, mrat, beta_p, eff, bins, 
     for t = t1, t2, delta_t do begin
 
        
-       xcur = NH_tools.pos_at_time(t) + pluto_position
+       xcur = NH_tools.pos_at_time(t)
        ycur=y_from_x(xcur, p, {point, x:0.,y:12.}, {point, x:158., y:-30.})
        print, "Progress: ", (1 - (t2-t)/(t2-t1))*100, "%", xcur, ycur
        o = NH_tools.orientation_at_time(t)
@@ -417,10 +416,10 @@ pro make_flyby_e_spectrograms, dir, p, t1, t2, xp, vp, mrat, beta_p, eff, bins, 
        orientations[i,1] = o[1]
        orientations[i,2] = o[2]
 
-       get_NH_local_particles, xp, xcur, ycur, zcur, radius, tags, mrat, species, weights
+       get_NH_local_particles, xp, xcur+pluto_position, ycur, zcur, radius, tags, mrat, species, weights
 
        for j=0, 2 do begin
-           make_e_spectrum,xcur,ycur,zcur,xp,vp,mrat,beta_p,p.beta,eff,bins,tags,species(j),spec,o
+           make_e_spectrum,xcur+pluto_position,ycur,zcur,xp,vp,mrat,beta_p,p.beta,eff,bins,tags,species(j),spec,o
            spectrograms_by_species(j,i,*) = spec*weights(j)
        endfor
 
